@@ -1,0 +1,35 @@
+﻿<nav class="toolbar">
+    <div class="toolbar-menu" tabindex="0">
+        File
+        <div class="toolbar-menu-dropdown">
+            <a href="#" class="toolbar-menu-item" @onclick="() => HandleMenuClick(newNoteText)">
+                <i class="fas fa-file-alt fa-fw mr-2"></i>
+                New Note
+            </a>
+
+
+            <a href="#" class="toolbar-menu-item" @onclick="() => HandleMenuClick(newFolderText)">
+                <i class="fas fa-folder-plus fa-fw mr-2"></i>
+                New Folder
+            </a>
+
+            <a href="#" class="toolbar-menu-item" @onclick="() => HandleMenuClick(newDashboardText)">
+                <i class="fas fa-tachometer-alt fa-fw mr-2"></i>
+                New Dashboard
+            </a>
+
+        </div>
+    </div>
+</nav>
+
+@code {
+    private string newNoteText = "New Note";
+    private string newFolderText = "New Folder";
+    private string newDashboardText = "New Dashboard";
+
+    private void HandleMenuClick(string action)
+    {
+        // In later steps, this will trigger actual functionality.
+        Console.WriteLine($"Menu action: {action}");
+    }
+}

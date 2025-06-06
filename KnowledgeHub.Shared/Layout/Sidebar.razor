@@ -1,0 +1,25 @@
+﻿<aside id="sidebar" class="w-1/3 md:w-1/4 lg:w-1/5 bg-slate-700 p-4 space-y-1 overflow-y-auto text-slate-200">
+    <div class="flex space-x-2 mb-3">
+        <button title="New Note" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white py-2 px-1 rounded-md flex items-center justify-center text-xs">
+            <i class="fas fa-file-alt mr-1"></i> Note
+        </button>
+        <button title="New Folder" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-1 rounded-md flex items-center justify-center text-xs">
+            <i class="fas fa-folder-plus mr-1"></i> Folder
+        </button>
+        <button title="New Dashboard" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-1 rounded-md flex items-center justify-center text-xs">
+            <i class="fas fa-tachometer-alt mr-1"></i> Dash
+        </button>
+    </div>
+
+    <div class="sidebar-section-header">Notes & Folders</div>
+    <div id="notesListContainer" class="space-y-1">
+    </div>
+
+    <div class="sidebar-section-header">Dashboards</div>
+    <div id="dashboardsListContainer" class="space-y-1">
+    </div>
+</aside>
+
+@code {
+    // This is where we will add C# code in the next steps to fetch and display data.
+}
