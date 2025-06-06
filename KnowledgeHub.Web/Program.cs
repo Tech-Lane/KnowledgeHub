@@ -1,6 +1,11 @@
 using KnowledgeHub.Shared.Services;
 using KnowledgeHub.Web.Components;
+using KnowledgeHub.Web.Data;
 using KnowledgeHub.Web.Services;
+using Microsoft.EntityFrameworkCore;
+{
+    
+}
 
 namespace KnowledgeHub
 {
@@ -17,6 +22,10 @@ namespace KnowledgeHub
 
             // Add device-specific services used by the KnowledgeHub.Shared project
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
+
+            // connection to SQLite database
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
 
             var app = builder.Build();
 
