@@ -1,0 +1,91 @@
+﻿@* In KnowledgeHub.Shared/Components/NoteEditor.razor *@
+@inject IStateService StateService
+@inject INoteDataService NoteDataService
+@implements IDisposable
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+
+@if (activeNote != null)
+{
+    <div class="note-editor-container">
+        <input @bind="activeNote.Title" class="w-full text-2xl font-bold p-2 border-b-2 border-gray-300 focus:border-sky-500 outline-none mb-4" />
+
+        <textarea @bind="activeNote.Content" class="w-full h-96 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500 mb-4"></textarea>
+
+        <div class="flex justify-between items-center">
+            <div>
+                <button @onclick="SaveChanges" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md flex items-center">
+                    <i class="fas fa-save mr-2"></i> Save Changes
+                </button>
+            </div>
+            <div>
+                <button @onclick="DeleteNote" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md flex items-center">
+                    <i class="fas fa-trash-alt mr-2"></i> Delete Note
+                </button>
+            </div>
+        </div>
+    </div>
+}
+else if (isLoading)
+{
+    <p>Loading note...</p>
+}
+
+@code {
+    private Note? activeNote;
+    private bool isLoading = false;
+
+    // When the component is created, subscribe to state changes
+    protected override void OnInitialized()
+    {
+        StateService.OnChange += HandleStateChange;
+    }
+
+    private async void HandleStateChange()
+    {
+        // This method is called whenever the selected item changes in the sidebar
+        var selectedTreeItem = StateService.SelectedItem as TreeItem;
+        if (selectedTreeItem?.Type == "note")
+        {
+            isLoading = true;
+            activeNote = null; // Clear the old note
+            await InvokeAsync(StateHasChanged); // Update UI to show "Loading..."
+
+            var noteData = (Note)selectedTreeItem.Data;
+            activeNote = await NoteDataService.GetNoteAsync(noteData.Id); // Fetch full note details
+            isLoading = false;
+            await InvokeAsync(StateHasChanged); // Update UI with the new note
+        }
+        else
+        {
+            activeNote = null;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        if (activeNote != null)
+        {
+            await NoteDataService.UpdateNoteAsync(activeNote);
+            // We might want to add a "Saved!" confirmation message later
+        }
+    }
+
+    private async Task DeleteNote()
+    {
+        if (activeNote != null)
+        {
+            // In a real app, you'd add a confirmation dialog here
+            await NoteDataService.DeleteNoteAsync(activeNote.Id);
+            // We need to tell the parent to refresh the sidebar, which we'll handle later
+            activeNote = null;
+        }
+    }
+
+    // Unsubscribe from the event when the component is destroyed to prevent memory leaks
+    public void Dispose()
+    {
+        StateService.OnChange -= HandleStateChange;
+    }
+}

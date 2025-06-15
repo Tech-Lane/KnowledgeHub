@@ -1,18 +1,53 @@
-﻿@inherits LayoutComponentBase
+﻿@* In KnowledgeHub.Shared/Layout/MainLayout.razor *@
+@inherits LayoutComponentBase
+@using KnowledgeHub.Shared.Components
+@using KnowledgeHub.Shared.Services
 
-<div class="h-screen flex flex-col bg-gray-100">
-
-    <TopToolBar />
+<div class="d-flex flex-column vh-100">
+    <TopToolbar />
 
     <Header />
 
-    <div class="flex-grow flex overflow-hidden">
+    <div class="flex-grow-1 d-flex overflow-hidden">
+        <Sidebar @rendermode="RenderMode.InteractiveAuto" />
 
-        <Sidebar />
-
-        <main class="flex-grow p-6 bg-white overflow-y-auto">
-            @Body
+        <main class="flex-grow-1 p-4 overflow-auto">
+            @switch (StateService.CurrentViewType)
+            {
+                case "note":
+                    <NoteEditor />
+                    break;
+                case "folder":
+                    <div class="text-center text-muted mt-5">
+                        <i class="fas fa-folder-open fa-3x mb-4"></i>
+                        <p class="h5">Folder Selected</p>
+                    </div>
+                    break;
+                case "dashboard":
+                     <div class="text-center text-muted mt-5">
+                        <i class="fas fa-tachometer-alt fa-3x mb-4"></i>
+                        <p class="h5">Dashboard View</p>
+                    </div>
+                    break;
+                default:
+                    @Body
+                    break;
+            }
         </main>
-
     </div>
 </div>
+
+@code {
+    [Inject]
+    private IStateService StateService { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        StateService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        StateService.OnChange -= StateHasChanged;
+    }
+}

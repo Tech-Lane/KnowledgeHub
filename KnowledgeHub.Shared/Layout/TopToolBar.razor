@@ -1,23 +1,9 @@
-﻿<nav class="toolbar">
-    <div class="toolbar-menu" tabindex="0">
-        File
-        <div class="toolbar-menu-dropdown">
-            <a href="#" class="toolbar-menu-item" @onclick="() => HandleMenuClick(newNoteText)">
-                <i class="fas fa-file-alt fa-fw mr-2"></i>
-                New Note
-            </a>
-
-
-            <a href="#" class="toolbar-menu-item" @onclick="() => HandleMenuClick(newFolderText)">
-                <i class="fas fa-folder-plus fa-fw mr-2"></i>
-                New Folder
-            </a>
-
-            <a href="#" class="toolbar-menu-item" @onclick="() => HandleMenuClick(newDashboardText)">
-                <i class="fas fa-tachometer-alt fa-fw mr-2"></i>
-                New Dashboard
-            </a>
-
+﻿<nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom p-0" style="height: 30px;">
+    <div class="container-fluid">
+        <div class="navbar-nav">
+            <a class="nav-link" href="#">File</a>
+            <a class="nav-link" href="#">Edit</a>
+            <a class="nav-link" href="#">View</a>
         </div>
     </div>
 </nav>

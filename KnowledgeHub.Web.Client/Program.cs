@@ -13,6 +13,12 @@ namespace KnowledgeHub.Web.Client
             // Add device-specific services used by the KnowledgeHub.Shared project
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+            builder.Services.AddSingleton<IStateService, StateService>();
+
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+            builder.Services.AddScoped<INoteDataService, ClientNoteDataService>();
+
             await builder.Build().RunAsync();
         }
     }

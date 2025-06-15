@@ -49,3 +49,39 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
+.sidebar-section-header {
+    font-size: 0.75rem; /* 12px */
+    text-transform: uppercase;
+    color: #94a3b8; /* slate-400 */
+    padding: 0.25rem;
+    margin-top: 1rem;
+}
+
+.folder-item, .note-item {
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+    .folder-header:hover, .note-item:hover {
+        background-color: #4b5563; /* slate-600 */
+    }
+
+    .folder-item.selected > .folder-header, .note-item.selected {
+        background-color: #0284c7; /* sky-600 */
+        color: white;
+    }
+
+.folder-content {
+    padding-left: 20px;
+}
+
+.folder-icon, .note-icon {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+}

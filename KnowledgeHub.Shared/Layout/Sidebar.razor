@@ -1,18 +1,36 @@
-﻿<aside id="sidebar" class="w-1/3 md:w-1/4 lg:w-1/5 bg-slate-700 p-4 space-y-1 overflow-y-auto text-slate-200">
-    <div class="flex space-x-2 mb-3">
-        <button title="New Note" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white py-2 px-1 rounded-md flex items-center justify-center text-xs">
-            <i class="fas fa-file-alt mr-1"></i> Note
+﻿@* In KnowledgeHub.Shared/Layout/Sidebar.razor *@
+@inject INoteDataService NoteDataService
+@inject IStateService StateService
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+
+<aside id="sidebar" class="sidebar d-flex flex-column p-3 text-white bg-dark">
+    <div class="d-grid gap-2 mb-3">
+        <button title="New Note" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center">
+            <i class="fas fa-file-alt me-2"></i>Note
         </button>
-        <button title="New Folder" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-1 rounded-md flex items-center justify-center text-xs">
-            <i class="fas fa-folder-plus mr-1"></i> Folder
+        <button title="New Folder" class="btn btn-sm btn-warning d-flex align-items-center justify-content-center">
+            <i class="fas fa-folder-plus me-2"></i>Folder
         </button>
-        <button title="New Dashboard" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-1 rounded-md flex items-center justify-center text-xs">
-            <i class="fas fa-tachometer-alt mr-1"></i> Dash
+        <button title="New Dashboard" class="btn btn-sm btn-info d-flex align-items-center justify-content-center">
+            <i class="fas fa-tachometer-alt me-2"></i>Dash
         </button>
     </div>
 
     <div class="sidebar-section-header">Notes & Folders</div>
     <div id="notesListContainer" class="space-y-1">
+        @if (isLoading)
+        {
+            <p class="text-xs text-secondary">Loading items...</p>
+        }
+        else if (noteTree.Any())
+        {
+            <RecursiveTree Items="noteTree" />
+        }
+        else
+        {
+            <p class="text-xs text-secondary">(No items found)</p>
+        }
     </div>
 
     <div class="sidebar-section-header">Dashboards</div>
@@ -21,5 +39,73 @@
 </aside>
 
 @code {
-    // This is where we will add C# code in the next steps to fetch and display data.
+    private List<TreeItem> noteTree = new();
+    private bool isLoading = true; // Add a flag to track loading state
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var folders = await NoteDataService.GetFoldersAsync();
+            var notes = await NoteDataService.GetNotesAsync();
+
+            if (folders != null && notes != null)
+            {
+                BuildNoteTree(folders, notes);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log any errors to the browser console (F12)
+            Console.WriteLine($"Error loading sidebar data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void BuildNoteTree(List<Folder> folders, List<Note> notes)
+    {
+        var allItems = new Dictionary<string, TreeItem>();
+        var rootItems = new List<TreeItem>();
+
+        foreach (var folder in folders)
+        {
+            allItems["folder-" + folder.Id] = new TreeItem
+            {
+                Id = "folder-" + folder.Id,
+                Name = folder.Name,
+                Type = "folder",
+                Data = folder
+            };
+        }
+
+        foreach (var note in notes)
+        {
+            allItems["note-" + note.Id] = new TreeItem
+            {
+                Id = "note-" + note.Id,
+                Name = note.Title,
+                Type = "note",
+                Data = note
+            };
+        }
+
+        foreach (var item in allItems.Values)
+        {
+            var parentId = item.Type == "folder" ? ((Folder)item.Data).ParentId : ((Note)item.Data).FolderId;
+
+            if (parentId.HasValue && allItems.TryGetValue("folder-" + parentId.Value, out var parentItem))
+            {
+                parentItem.Children.Add(item);
+            }
+            else
+            {
+                rootItems.Add(item);
+            }
+        }
+        noteTree = rootItems;
+    }
 }

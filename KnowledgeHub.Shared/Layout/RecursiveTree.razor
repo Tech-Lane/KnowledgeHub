@@ -1,0 +1,73 @@
+﻿@* In KnowledgeHub.Shared/Layout/RecursiveTree.razor *@
+@inject IStateService StateService
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+
+@foreach (var item in Items)
+{
+    <div class="tree-item-container">
+        @if (item.Type == "folder")
+        {
+            <div class="folder-item @GetSelectedClass(item)" data-id="@item.Id">
+                <div class="folder-header" @onclick="() => ToggleFolder(item)">
+                    <span class="flex items-center flex-grow">
+                        <i class="folder-icon fas @(expandedItems.Contains(item.Id) ? "fa-folder-open" : "fa-folder") mr-2"></i>
+                        <span class="folder-name">@item.Name</span>
+                    </span>
+                </div>
+            </div>
+
+            @if (expandedItems.Contains(item.Id))
+            {
+                <div class="folder-content">
+                    @if (item.Children.Any())
+                    {
+                        <RecursiveTree Items="item.Children" />
+                    }
+                    else
+                    {
+                        <div class="text-xs text-slate-400 italic pl-6 py-1">(empty)</div>
+                    }
+                </div>
+            }
+        }
+        else // It's a note
+        {
+            <div class="note-item @GetSelectedClass(item)" data-id="@item.Id" @onclick="() => SelectNote(item)">
+                <i class="note-icon fas fa-file-alt mr-2"></i>
+                <span class="note-title">@item.Name</span>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<TreeItem> Items { get; set; } = new();
+
+    private HashSet<string> expandedItems = new();
+    private string? selectedItemId => (StateService.SelectedItem as TreeItem)?.Id;
+
+    private void ToggleFolder(TreeItem folder)
+    {
+        if (expandedItems.Contains(folder.Id))
+        {
+            expandedItems.Remove(folder.Id);
+        }
+        else
+        {
+            expandedItems.Add(folder.Id);
+        }
+        StateService.SetSelectedItem("folder", folder);
+    }
+
+    private void SelectNote(TreeItem note)
+    {
+        StateService.SetSelectedItem("note", note);
+    }
+
+    private string GetSelectedClass(TreeItem item)
+    {
+        return item.Id == selectedItemId ? "selected" : "";
+    }
+}

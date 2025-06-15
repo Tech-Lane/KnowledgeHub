@@ -1,6 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@* In KnowledgeHub.Web/Components/App.razor *@
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,12 +8,15 @@
     <link rel="stylesheet" href="_content/KnowledgeHub.Shared/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="_content/KnowledgeHub.Shared/app.css" />
     <link rel="stylesheet" href="KnowledgeHub.Web.styles.css" />
-    <link rel="icon" type="image/png" href="_content/KnowledgeHub.Shared/favicon.png" />
-    <HeadOutlet @rendermode="InteractiveAuto" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="icon" href="favicon.ico" />
+    <HeadOutlet @rendermode="RenderMode.InteractiveAuto" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveAuto" />
+    @* This is the correct place for the render mode *@
+    <Routes @rendermode="RenderMode.InteractiveAuto" />
+
     <script src="_framework/blazor.web.js"></script>
 </body>
 

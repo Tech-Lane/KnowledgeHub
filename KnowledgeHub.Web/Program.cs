@@ -3,9 +3,6 @@ using KnowledgeHub.Web.Components;
 using KnowledgeHub.Web.Data;
 using KnowledgeHub.Web.Services;
 using Microsoft.EntityFrameworkCore;
-{
-    
-}
 
 namespace KnowledgeHub
 {
@@ -20,8 +17,13 @@ namespace KnowledgeHub
                 .AddInteractiveServerComponents()
                 .AddInteractiveWebAssemblyComponents();
 
+            builder.Services.AddControllers();
+
             // Add device-specific services used by the KnowledgeHub.Shared project
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
+            builder.Services.AddSingleton<IStateService, StateService>();
+
+            builder.Services.AddScoped<INoteDataService, ServerNoteDataService>();
 
             // connection to SQLite database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -52,6 +54,8 @@ namespace KnowledgeHub
                 .AddAdditionalAssemblies(
                     typeof(KnowledgeHub.Shared._Imports).Assembly,
                     typeof(KnowledgeHub.Web.Client._Imports).Assembly);
+
+            app.MapControllers();
 
             app.Run();
         }
