@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Components;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,6 @@ namespace KnowledgeHub.Shared.Services
         string? CurrentViewType { get; }
         event Action? OnChange;
         void SetSelectedItem(string viewType, object? item);
+        void Initialize(Dispatcher dispatcher);
     }
 }

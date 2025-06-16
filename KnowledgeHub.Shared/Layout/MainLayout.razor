@@ -2,37 +2,20 @@
 @inherits LayoutComponentBase
 @using KnowledgeHub.Shared.Components
 @using KnowledgeHub.Shared.Services
+@using KnowledgeHub.Shared.Layout
 
 <div class="d-flex flex-column vh-100">
-    <TopToolbar />
+    <TopToolBar />
 
     <Header />
 
     <div class="flex-grow-1 d-flex overflow-hidden">
-        <Sidebar @rendermode="RenderMode.InteractiveAuto" />
+        <Sidebar @rendermode="RenderMode.InteractiveServer" />
 
         <main class="flex-grow-1 p-4 overflow-auto">
-            @switch (StateService.CurrentViewType)
-            {
-                case "note":
-                    <NoteEditor />
-                    break;
-                case "folder":
-                    <div class="text-center text-muted mt-5">
-                        <i class="fas fa-folder-open fa-3x mb-4"></i>
-                        <p class="h5">Folder Selected</p>
-                    </div>
-                    break;
-                case "dashboard":
-                     <div class="text-center text-muted mt-5">
-                        <i class="fas fa-tachometer-alt fa-3x mb-4"></i>
-                        <p class="h5">Dashboard View</p>
-                    </div>
-                    break;
-                default:
-                    @Body
-                    break;
-            }
+            <ViewManager>
+                @Body
+            </ViewManager>
         </main>
     </div>
 </div>
@@ -43,11 +26,11 @@
 
     protected override void OnInitialized()
     {
-        StateService.OnChange += StateHasChanged;
+        // The OnChange subscription is now handled by ViewManager
     }
 
     public void Dispose()
     {
-        StateService.OnChange -= StateHasChanged;
+        // The OnChange subscription is now handled by ViewManager
     }
 }

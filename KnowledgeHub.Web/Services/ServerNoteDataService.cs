@@ -27,14 +27,16 @@ namespace KnowledgeHub.Web.Services
 
         public async Task<Note?> GetNoteAsync(int id)
         {
-            return await _context.Notes.FindAsync(id);
+            return await _context.Notes
+                .Include(n => n.Tables)
+                .FirstOrDefaultAsync(n => n.Id == id);
         }
 
         public async Task UpdateNoteAsync(Note note)
         {
             // Also update the 'UpdatedAt' timestamp
             note.UpdatedAt = DateTime.UtcNow;
-            _context.Entry(note).State = EntityState.Modified;
+            _context.Update(note);
             await _context.SaveChangesAsync();
         }
 
@@ -46,6 +48,37 @@ namespace KnowledgeHub.Web.Services
                 _context.Notes.Remove(note);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<Folder?> CreateFolderAsync(Folder newFolder)
+        {
+            _context.Folders.Add(newFolder);
+            await _context.SaveChangesAsync();
+            return newFolder;
+        }
+
+        public async Task<Note?> CreateNoteAsync(Note newNote)
+        {
+            _context.Notes.Add(newNote);
+            await _context.SaveChangesAsync();
+            return newNote;
+        }
+
+        public async Task<Table> UpdateTableAsync(Table table)
+        {
+            var existingTable = await _context.Tables.FindAsync(table.Id);
+            if (existingTable != null)
+            {
+                existingTable.DataAsJson = table.DataAsJson;
+                await _context.SaveChangesAsync();
+                return existingTable;
+            }
+            return null;
+        }
+
+        public async Task<Table> GetTableAsync(int id)
+        {
+            return await _context.Tables.FindAsync(id);
         }
     }
 }

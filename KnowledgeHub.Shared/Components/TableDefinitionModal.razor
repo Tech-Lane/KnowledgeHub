@@ -1,0 +1,79 @@
+@using KnowledgeHub.Shared.Models
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components
+
+<h3>Define Table</h3>
+
+<div class="mb-3">
+    <label for="tableName" class="form-label">Table Name</label>
+    <input type="text" class="form-control" id="tableName" @bind="TableName" />
+</div>
+
+<h5>Columns</h5>
+@foreach (var column in Columns)
+{
+    <div class="row mb-2">
+        <div class="col">
+            <input type="text" class="form-control" placeholder="Column Name" @bind="column.Name" />
+        </div>
+        <div class="col">
+            <select class="form-select" @bind="column.DataType">
+                @foreach (var type in Enum.GetValues(typeof(ColumnDataType)))
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-danger" @onclick="() => RemoveColumn(column)">Remove</button>
+        </div>
+    </div>
+}
+
+<button class="btn btn-secondary mb-3" @onclick="AddColumn">Add Column</button>
+
+<div>
+    <button class="btn btn-primary" @onclick="CreateTable">Create Table</button>
+    <button class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+</div>
+
+@code {
+    [Parameter] public EventCallback<Table> OnCreateTable { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string TableName { get; set; } = "";
+    private List<ColumnDefinition> Columns { get; set; } = new List<ColumnDefinition>();
+
+    protected override void OnInitialized()
+    {
+        // Start with one default column
+        if (Columns.Count == 0)
+        {
+            Columns.Add(new ColumnDefinition());
+        }
+    }
+
+    private void AddColumn()
+    {
+        Columns.Add(new ColumnDefinition());
+    }
+
+    private void RemoveColumn(ColumnDefinition column)
+    {
+        if (Columns.Count > 1) // Always keep at least one column
+        {
+            Columns.Remove(column);
+        }
+    }
+
+    private async Task CreateTable()
+    {
+        var newTable = new Table
+        {
+            Name = TableName,
+            ColumnsAsJson = JsonSerializer.Serialize(Columns),
+            DataAsJson = "[]" // Empty data to start
+        };
+        await OnCreateTable.InvokeAsync(newTable);
+    }
+} 

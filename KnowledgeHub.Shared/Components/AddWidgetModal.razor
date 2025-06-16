@@ -1,0 +1,116 @@
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@using System.Text.Json
+@inject INoteDataService NoteDataService
+
+<div class="modal-backdrop">
+    <div class="modal-content">
+        <h3>Add Widget</h3>
+
+        <div class="mb-3">
+            <label for="widgetType" class="form-label">Widget Type</label>
+            <select class="form-select" @bind="SelectedWidgetType">
+                @foreach (var type in Enum.GetValues(typeof(WidgetType)))
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
+        </div>
+
+        @if (SelectedWidgetType == WidgetType.NotePreview)
+        {
+            <div class="mb-3">
+                <label for="note" class="form-label">Note</label>
+                <select class="form-select" @bind="SelectedNoteId">
+                    @foreach (var note in notes)
+                    {
+                        <option value="@note.Id">@note.Title</option>
+                    }
+                </select>
+            </div>
+        }
+        else if (SelectedWidgetType == WidgetType.TablePreview || SelectedWidgetType == WidgetType.TableAggregate)
+        {
+            <div class="mb-3">
+                <label for="table" class="form-label">Table</label>
+                <select class="form-select" @bind="SelectedTableId">
+                    @foreach (var table in tables)
+                    {
+                        <option value="@table.Id">@table.Name</option>
+                    }
+                </select>
+            </div>
+        }
+
+        <button class="btn btn-primary" @onclick="AddWidget">Add</button>
+        <button class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<Widget> OnAddWidget { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private WidgetType SelectedWidgetType { get; set; } = WidgetType.NotePreview;
+    private int SelectedNoteId { get; set; }
+    private int SelectedTableId { get; set; }
+
+    private List<Note> notes = new();
+    private List<Table> tables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        notes = await NoteDataService.GetNotesAsync() ?? new List<Note>();
+        // A better approach would be to get all tables directly
+        tables = notes.SelectMany(n => n.Tables).ToList();
+        if (notes.Any())
+        {
+            SelectedNoteId = notes.First().Id;
+        }
+        if (tables.Any())
+        {
+            SelectedTableId = tables.First().Id;
+        }
+    }
+
+    private async Task AddWidget()
+    {
+        var settings = new Dictionary<string, object>();
+        if (SelectedWidgetType == WidgetType.NotePreview)
+        {
+            settings["NoteId"] = SelectedNoteId;
+        }
+        else
+        {
+            settings["TableId"] = SelectedTableId;
+        }
+
+        var newWidget = new Widget
+        {
+            WidgetType = SelectedWidgetType,
+            SettingsAsJson = JsonSerializer.Serialize(settings)
+        };
+        await OnAddWidget.InvokeAsync(newWidget);
+    }
+}
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+    }
+
+    .modal-content {
+        min-width: 500px;
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+    }
+</style> 

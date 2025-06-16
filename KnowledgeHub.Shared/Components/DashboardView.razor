@@ -1,0 +1,91 @@
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@using KnowledgeHub.Shared.Components.Widgets
+@inject IDashboardDataService DashboardDataService
+
+@if (Dashboard != null)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">@Dashboard.Name</h2>
+        <button class="btn btn-primary" @onclick="() => isAddWidgetModalVisible = true">
+            <i class="fas fa-plus me-1"></i> Add Widget
+        </button>
+    </div>
+
+    @if (isAddWidgetModalVisible)
+    {
+        <AddWidgetModal OnAddWidget="HandleAddWidget" OnCancel="() => isAddWidgetModalVisible = false" />
+    }
+
+    @if (Dashboard.Widgets.Any())
+    {
+        <div class="widget-grid">
+            @foreach (var widget in Dashboard.Widgets)
+            {
+                <div class="card widget-card">
+                    <div class="card-body">
+                        @switch (widget.WidgetType)
+                        {
+                            case WidgetType.NotePreview:
+                                <NotePreviewWidget Widget="widget" />
+                                break;
+                            case WidgetType.TablePreview:
+                                <TablePreviewWidget Widget="widget" />
+                                break;
+                            case WidgetType.TableAggregate:
+                                <TableAggregateWidget Widget="widget" />
+                                break;
+                            case WidgetType.QuickStats:
+                                <QuickStatsWidget Widget="widget" />
+                                break;
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center p-5 border rounded-3 my-4">
+            <i class="fas fa-grip-horizontal fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">This dashboard is empty.</h5>
+            <p>Click "Add Widget" to get started.</p>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public Dashboard Dashboard { get; set; }
+
+    private bool isAddWidgetModalVisible = false;
+
+    private async Task HandleAddWidget(Widget newWidget)
+    {
+        newWidget.DashboardId = Dashboard.Id;
+        var addedWidget = await DashboardDataService.AddWidgetAsync(newWidget);
+        if (addedWidget != null)
+        {
+            Dashboard.Widgets.Add(addedWidget);
+        }
+        isAddWidgetModalVisible = false;
+    }
+}
+
+<style>
+    .widget-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .widget-card {
+        border-radius: var(--border-radius);
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: box-shadow 0.2s ease-in-out;
+    }
+
+    .widget-card:hover {
+        box-shadow: var(--box-shadow);
+    }
+</style> 

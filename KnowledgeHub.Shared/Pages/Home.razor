@@ -1,7 +1,69 @@
 ﻿@page "/"
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@using System.Text.Json
+@inject IDashboardDataService DashboardDataService
+@inject INoteDataService NoteDataService
+@inject IStateService StateService
 
-<div class="text-center text-gray-500 mt-10">
-    <i class="fas fa-concierge-bell fa-3x mb-4"></i>
-    <p class="text-xl">Welcome to your Knowledge Hub!</p>
-    <p>Select an item from the sidebar to get started.</p>
-</div>
+@if (homeDashboard == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <DashboardView Dashboard="homeDashboard" />
+}
+
+@code {
+    private Dashboard homeDashboard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var dashboards = await DashboardDataService.GetDashboardsAsync();
+        homeDashboard = dashboards.FirstOrDefault(d => d.Name == "Home");
+
+        if (homeDashboard == null)
+        {
+            homeDashboard = await CreateAndSeedHomeDashboard();
+        }
+        else if(homeDashboard.Widgets.Count == 0)
+        {
+            homeDashboard = await SeedHomeDashboard(homeDashboard);
+        }
+
+        // Set the home dashboard as the selected item in the state
+        StateService.SetSelectedItem("dashboard-home", homeDashboard);
+    }
+
+    private async Task<Dashboard> CreateAndSeedHomeDashboard()
+    {
+        var newDashboard = new Dashboard { Name = "Home" };
+        var createdDashboard = await DashboardDataService.CreateDashboardAsync(newDashboard);
+        return await SeedHomeDashboard(createdDashboard);
+    }
+
+    private async Task<Dashboard> SeedHomeDashboard(Dashboard dashboard)
+    {
+        var notes = await NoteDataService.GetNotesAsync() ?? new List<Note>();
+
+        var totalNotesWidget = new Widget
+        {
+            WidgetType = WidgetType.TableAggregate,
+            SettingsAsJson = JsonSerializer.Serialize(new { Title = "Total Notes", Value = notes.Count.ToString() }),
+            DashboardId = dashboard.Id
+        };
+        await DashboardDataService.AddWidgetAsync(totalNotesWidget);
+
+        var recentNotes = notes.OrderByDescending(n => n.UpdatedAt).Take(5);
+        var recentNotesWidget = new Widget
+        {
+            WidgetType = WidgetType.NotePreview,
+            SettingsAsJson = JsonSerializer.Serialize(new { Title = "Recent Notes", Notes = recentNotes.Select(n => new { n.Id, n.Title }) }),
+            DashboardId = dashboard.Id
+        };
+        await DashboardDataService.AddWidgetAsync(recentNotesWidget);
+
+        return await DashboardDataService.GetDashboardAsync(dashboard.Id);
+    }
+}

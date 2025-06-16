@@ -3,6 +3,7 @@ using System;
 using KnowledgeHub.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,27 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KnowledgeHub.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250615213043_AddTables")]
+    partial class AddTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
-
-            modelBuilder.Entity("KnowledgeHub.Shared.Models.Dashboard", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Dashboards");
-                });
 
             modelBuilder.Entity("KnowledgeHub.Shared.Models.Folder", b =>
                 {
@@ -107,29 +95,6 @@ namespace KnowledgeHub.Web.Migrations
                     b.ToTable("Tables");
                 });
 
-            modelBuilder.Entity("KnowledgeHub.Shared.Models.Widget", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("DashboardId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("SettingsAsJson")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("WidgetType")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DashboardId");
-
-                    b.ToTable("Widgets");
-                });
-
             modelBuilder.Entity("KnowledgeHub.Shared.Models.Table", b =>
                 {
                     b.HasOne("KnowledgeHub.Shared.Models.Note", "Note")
@@ -139,22 +104,6 @@ namespace KnowledgeHub.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Note");
-                });
-
-            modelBuilder.Entity("KnowledgeHub.Shared.Models.Widget", b =>
-                {
-                    b.HasOne("KnowledgeHub.Shared.Models.Dashboard", "Dashboard")
-                        .WithMany("Widgets")
-                        .HasForeignKey("DashboardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Dashboard");
-                });
-
-            modelBuilder.Entity("KnowledgeHub.Shared.Models.Dashboard", b =>
-                {
-                    b.Navigation("Widgets");
                 });
 
             modelBuilder.Entity("KnowledgeHub.Shared.Models.Note", b =>

@@ -1,0 +1,59 @@
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@using System.Text.Json
+@inject INoteDataService NoteDataService
+
+@if (table != null)
+{
+    <div class="widget-content">
+        <h5>Table: @table.Name</h5>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    @foreach (var column in columns)
+                    {
+                        <th>@column.Name</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        @foreach (var column in columns)
+                        {
+                            <td>@row[column.Name]</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p>Loading table...</p>
+}
+
+@code {
+    [Parameter]
+    public Widget Widget { get; set; }
+
+    private Table table;
+    private List<ColumnDefinition> columns = new();
+    private List<Dictionary<string, object>> rows = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var settings = JsonSerializer.Deserialize<Dictionary<string, object>>(Widget.SettingsAsJson);
+        if (settings.TryGetValue("TableId", out var tableIdObj) && int.TryParse(tableIdObj.ToString(), out var tableId))
+        {
+            table = await NoteDataService.GetTableAsync(tableId);
+            if (table != null)
+            {
+                columns = JsonSerializer.Deserialize<List<ColumnDefinition>>(table.ColumnsAsJson) ?? new();
+                rows = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(table.DataAsJson) ?? new();
+            }
+        }
+    }
+} 

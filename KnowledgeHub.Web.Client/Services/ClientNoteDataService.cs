@@ -38,5 +38,28 @@ namespace KnowledgeHub.Web.Client.Services
         {
             await _http.DeleteAsync($"api/Notes/{id}");
         }
+
+        public async Task<Folder?> CreateFolderAsync(Folder newFolder)
+        {
+            var response = await _http.PostAsJsonAsync("api/Folders", newFolder);
+            return await response.Content.ReadFromJsonAsync<Folder>();
+        }
+
+        public async Task<Note?> CreateNoteAsync(Note newNote)
+        {
+            var response = await _http.PostAsJsonAsync("api/Notes", newNote);
+            return await response.Content.ReadFromJsonAsync<Note>();
+        }
+
+        public async Task<Table> UpdateTableAsync(Table table)
+        {
+            var response = await _http.PutAsJsonAsync($"api/Tables/{table.Id}", table);
+            return await response.Content.ReadFromJsonAsync<Table>();
+        }
+
+        public async Task<Table> GetTableAsync(int id)
+        {
+            return await _http.GetFromJsonAsync<Table>($"api/Tables/{id}");
+        }
     }
 }

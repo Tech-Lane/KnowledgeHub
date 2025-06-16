@@ -1,0 +1,32 @@
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@using System.Text.Json
+@inject INoteDataService NoteDataService
+
+@if (note != null)
+{
+    <div class="widget-content">
+        <h5>Note: @note.Title</h5>
+        <p>@note.Content</p>
+    </div>
+}
+else
+{
+    <p>Loading note...</p>
+}
+
+@code {
+    [Parameter]
+    public Widget Widget { get; set; }
+
+    private Note note;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var settings = JsonSerializer.Deserialize<Dictionary<string, object>>(Widget.SettingsAsJson);
+        if (settings.TryGetValue("NoteId", out var noteIdObj) && int.TryParse(noteIdObj.ToString(), out var noteId))
+        {
+            note = await NoteDataService.GetNoteAsync(noteId);
+        }
+    }
+} 

@@ -5,40 +5,38 @@
 
 @foreach (var item in Items)
 {
-    <div class="tree-item-container">
-        @if (item.Type == "folder")
-        {
-            <div class="folder-item @GetSelectedClass(item)" data-id="@item.Id">
-                <div class="folder-header" @onclick="() => ToggleFolder(item)">
-                    <span class="flex items-center flex-grow">
-                        <i class="folder-icon fas @(expandedItems.Contains(item.Id) ? "fa-folder-open" : "fa-folder") mr-2"></i>
-                        <span class="folder-name">@item.Name</span>
-                    </span>
-                </div>
-            </div>
+    @if (item.Type == "folder")
+    {
+        var folder = (Folder)item.Data;
+        <div class="folder-item @GetSelectedClass(item)" @onclick="() => ToggleFolder(item)" data-id="@item.Id">
+            <span class="folder-icon">
+                <i class="fas @(expandedItems.Contains(item.Id) ? "fa-folder-open" : "fa-folder")"></i>
+            </span>
+            <span class="folder-name flex-grow-1">@item.Name</span>
+        </div>
 
-            @if (expandedItems.Contains(item.Id))
-            {
-                <div class="folder-content">
-                    @if (item.Children.Any())
-                    {
-                        <RecursiveTree Items="item.Children" />
-                    }
-                    else
-                    {
-                        <div class="text-xs text-slate-400 italic pl-6 py-1">(empty)</div>
-                    }
-                </div>
-            }
-        }
-        else // It's a note
+        @if (expandedItems.Contains(item.Id))
         {
-            <div class="note-item @GetSelectedClass(item)" data-id="@item.Id" @onclick="() => SelectNote(item)">
-                <i class="note-icon fas fa-file-alt mr-2"></i>
-                <span class="note-title">@item.Name</span>
+            <div class="folder-content">
+                @if (item.Children.Any())
+                {
+                    <RecursiveTree Items="item.Children" />
+                }
+                else
+                {
+                    <div class="p-2 small text-muted fst-italic">(empty)</div>
+                }
             </div>
         }
-    </div>
+    }
+    else // It's a note
+    {
+        var note = (Note)item.Data;
+        <div class="note-item @GetSelectedClass(item)" @onclick="() => SelectNote(item)" data-id="@item.Id">
+            <span class="note-icon"><i class="fas fa-file-alt"></i></span>
+            <span class="note-title">@item.Name</span>
+        </div>
+    }
 }
 
 @code {

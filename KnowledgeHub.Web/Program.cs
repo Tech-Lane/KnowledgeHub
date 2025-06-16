@@ -24,6 +24,7 @@ namespace KnowledgeHub
             builder.Services.AddSingleton<IStateService, StateService>();
 
             builder.Services.AddScoped<INoteDataService, ServerNoteDataService>();
+            builder.Services.AddScoped<IDashboardDataService, ServerDashboardDataService>();
 
             // connection to SQLite database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

@@ -1,0 +1,21 @@
+@* In KnowledgeHub.Web.Client/App.razor *@
+@using KnowledgeHub.Shared.Services
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@inject IStateService StateService
+@inject Dispatcher Dispatcher
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(KnowledgeHub.Shared.Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+
+@code {
+    protected override void OnInitialized()
+    {
+        StateService.Initialize(Dispatcher);
+        base.OnInitialized();
+    }
+} 

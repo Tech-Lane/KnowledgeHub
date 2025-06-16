@@ -8,9 +8,9 @@ namespace KnowledgeHub.Shared.Models
 {
     public class TreeItem
     {
-        public string Id { get; set; }
-        public string Type { get; set; } // "folder" or "note"
-        public string Name { get; set; }
+        public required string Id { get; set; }
+        public required string Type { get; set; } // "folder" or "note"
+        public required string Name { get; set; }
         public object? Data { get; set; }
         public List<TreeItem> Children { get; set; } = new();
     }

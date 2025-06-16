@@ -5,7 +5,7 @@
 A self-hostable web application that seamlessly blends note-taking with robust, integrated data tables and customizable dashboards. This project is being developed as the capstone for the WGU Software Engineering program as of June 2025.
 
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)
-![.NET Version](https://img.shields.io/badge/.NET-9.0-blueviolet)
+![.NET Version](https://img.shields.io/badge/.NET-8.0-blueviolet)
 ![Framework](https://img.shields.io/badge/Framework-Blazor_WASM-blue)
 
 ## About The Project

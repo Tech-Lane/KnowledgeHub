@@ -1,0 +1,47 @@
+@* In KnowledgeHub.Shared/Components/Widgets/QuickStatsWidget.razor *@
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@inject INoteDataService NoteDataService
+
+<div class="quick-stats-widget">
+    <h5 class="card-title">Quick Stats</h5>
+    @if (isLoading)
+    {
+        <p>Loading stats...</p>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-6">
+                <div class="stat-item text-center p-3 border rounded">
+                    <div class="stat-value fs-4 fw-bold">@totalNotes</div>
+                    <div class="stat-label text-muted">Total Notes</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-item text-center p-3 border rounded">
+                    <div class="stat-value fs-4 fw-bold">@totalFolders</div>
+                    <div class="stat-label text-muted">Total Folders</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Widget Widget { get; set; }
+
+    private bool isLoading = true;
+    private int totalNotes;
+    private int totalFolders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var notes = await NoteDataService.GetNotesAsync() ?? new List<Note>();
+        var folders = await NoteDataService.GetFoldersAsync() ?? new List<Folder>();
+        totalNotes = notes.Count;
+        totalFolders = folders.Count;
+        isLoading = false;
+    }
+} 

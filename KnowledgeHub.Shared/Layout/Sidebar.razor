@@ -1,48 +1,84 @@
 ﻿@* In KnowledgeHub.Shared/Layout/Sidebar.razor *@
 @inject INoteDataService NoteDataService
+@inject IDashboardDataService DashboardDataService
 @inject IStateService StateService
+@implements IDisposable
 @using KnowledgeHub.Shared.Models
 @using KnowledgeHub.Shared.Services
 
-<aside id="sidebar" class="sidebar d-flex flex-column p-3 text-white bg-dark">
-    <div class="d-grid gap-2 mb-3">
-        <button title="New Note" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center">
-            <i class="fas fa-file-alt me-2"></i>Note
-        </button>
-        <button title="New Folder" class="btn btn-sm btn-warning d-flex align-items-center justify-content-center">
-            <i class="fas fa-folder-plus me-2"></i>Folder
-        </button>
-        <button title="New Dashboard" class="btn btn-sm btn-info d-flex align-items-center justify-content-center">
-            <i class="fas fa-tachometer-alt me-2"></i>Dash
-        </button>
+<aside id="sidebar" class="sidebar">
+    <div class="p-3">
+        <div class="d-grid gap-2 mb-3">
+            <button title="New Note" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center" @onclick="CreateNewNote">
+                <i class="fas fa-file-alt me-2"></i>Note
+            </button>
+            <button title="New Folder" class="btn btn-sm btn-secondary d-flex align-items-center justify-content-center" @onclick="CreateNewFolder">
+                <i class="fas fa-folder-plus me-2"></i>Folder
+            </button>
+            <button title="New Dashboard" class="btn btn-sm btn-secondary d-flex align-items-center justify-content-center" @onclick="CreateNewDashboard">
+                <i class="fas fa-tachometer-alt me-2"></i>Dash
+            </button>
+        </div>
     </div>
 
-    <div class="sidebar-section-header">Notes & Folders</div>
-    <div id="notesListContainer" class="space-y-1">
-        @if (isLoading)
-        {
-            <p class="text-xs text-secondary">Loading items...</p>
-        }
-        else if (noteTree.Any())
-        {
-            <RecursiveTree Items="noteTree" />
-        }
-        else
-        {
-            <p class="text-xs text-secondary">(No items found)</p>
-        }
-    </div>
+    <div class="flex-grow-1 overflow-auto">
+        <div class="sidebar-section-header">Workspace</div>
+        <div id="notesListContainer" class="px-2">
+            @if (isLoading)
+            {
+                <p class="p-2 small text-muted">Loading items...</p>
+            }
+            else if (noteTree.Any())
+            {
+                <RecursiveTree Items="noteTree" />
+            }
+            else
+            {
+                <p class="p-2 small text-muted">(No items found)</p>
+            }
+        </div>
 
-    <div class="sidebar-section-header">Dashboards</div>
-    <div id="dashboardsListContainer" class="space-y-1">
+        <div class="sidebar-section-header">Dashboards</div>
+        <div id="dashboardsListContainer" class="px-2">
+            @if (dashboards.Any())
+            {
+                @foreach (var dashboard in dashboards)
+                {
+                    var classes = $"note-item {(StateService.SelectedItem == dashboard ? "selected" : "")}";
+                    <div class="@classes" @onclick="() => SelectDashboard(dashboard)">
+                        <span class="note-icon"><i class="fas fa-columns"></i></span>
+                        @dashboard.Name
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="p-2 small text-muted">(No dashboards yet)</p>
+            }
+        </div>
     </div>
 </aside>
 
 @code {
     private List<TreeItem> noteTree = new();
+    private List<Dashboard> dashboards = new();
     private bool isLoading = true; // Add a flag to track loading state
 
     protected override async Task OnInitializedAsync()
+    {
+        StateService.OnChange += HandleStateChange;
+        await LoadNoteTreeAsync();
+        await LoadDashboardsAsync();
+    }
+
+    private async void HandleStateChange()
+    {
+        await LoadNoteTreeAsync();
+        await LoadDashboardsAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadNoteTreeAsync()
     {
         isLoading = true;
         try
@@ -95,7 +131,15 @@
 
         foreach (var item in allItems.Values)
         {
-            var parentId = item.Type == "folder" ? ((Folder)item.Data).ParentId : ((Note)item.Data).FolderId;
+            int? parentId = null;
+            if (item.Type == "folder" && item.Data is Folder folder)
+            {
+                parentId = folder.ParentId;
+            }
+            else if (item.Type == "note" && item.Data is Note note)
+            {
+                parentId = note.FolderId;
+            }
 
             if (parentId.HasValue && allItems.TryGetValue("folder-" + parentId.Value, out var parentItem))
             {
@@ -107,5 +151,57 @@
             }
         }
         noteTree = rootItems;
+    }
+
+    private async Task LoadDashboardsAsync()
+    {
+        dashboards = await DashboardDataService.GetDashboardsAsync() ?? new List<Dashboard>();
+    }
+
+    private async Task CreateNewNote()
+    {
+        var folderId = (StateService.SelectedItem as Folder)?.Id;
+        var newNote = new Note { Title = "New Note", Content = "", FolderId = folderId };
+        var createdNote = await NoteDataService.CreateNoteAsync(newNote);
+        if (createdNote != null)
+        {
+            await LoadNoteTreeAsync();
+            var newTreeItem = new TreeItem { Id = "note-" + createdNote.Id, Name = createdNote.Title, Type = "note", Data = createdNote };
+            StateService.SetSelectedItem("note", newTreeItem);
+        }
+    }
+
+    private async Task CreateNewFolder()
+    {
+        var parentFolderId = (StateService.SelectedItem as Folder)?.Id;
+        var newFolder = new Folder { Name = "New Folder", ParentId = parentFolderId };
+        var createdFolder = await NoteDataService.CreateFolderAsync(newFolder);
+        if (createdFolder != null)
+        {
+            await LoadNoteTreeAsync();
+            var newTreeItem = new TreeItem { Id = "folder-" + createdFolder.Id, Name = createdFolder.Name, Type = "folder", Data = createdFolder };
+            StateService.SetSelectedItem("folder", newTreeItem);
+        }
+    }
+
+    private async Task CreateNewDashboard()
+    {
+        var newDashboard = new Dashboard { Name = "New Dashboard" };
+        var createdDashboard = await DashboardDataService.CreateDashboardAsync(newDashboard);
+        if (createdDashboard != null)
+        {
+            await LoadDashboardsAsync();
+            StateService.SetSelectedItem("dashboard", createdDashboard);
+        }
+    }
+
+    private void SelectDashboard(Dashboard dashboard)
+    {
+        StateService.SetSelectedItem("dashboard", dashboard);
+    }
+
+    public void Dispose()
+    {
+        StateService.OnChange -= HandleStateChange;
     }
 }

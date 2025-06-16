@@ -15,5 +15,9 @@ namespace KnowledgeHub.Shared.Services
         Task<Note?> GetNoteAsync(int id);
         Task UpdateNoteAsync(Note note);
         Task DeleteNoteAsync(int id);
+        Task<Folder?> CreateFolderAsync(Folder newFolder);
+        Task<Note?> CreateNoteAsync(Note newNote);
+        Task<Table> UpdateTableAsync(Table table);
+        Task<Table> GetTableAsync(int id);
     }
 }

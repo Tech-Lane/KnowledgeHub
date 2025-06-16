@@ -1,0 +1,121 @@
+@using KnowledgeHub.Shared.Models
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components
+@using KnowledgeHub.Shared.Services
+@inject INoteDataService NoteDataService
+@inject IStateService StateService
+
+@if (Table != null)
+{
+    <h4>@Table.Name</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                @foreach (var column in Columns)
+                {
+                    <th>@column.Name</th>
+                }
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Rows)
+            {
+                <tr>
+                    @foreach (var column in Columns)
+                    {
+                        <td>
+                            <input value="@row[column.Name]?.ToString()"
+                                   @oninput='(e) => row[column.Name] = e.Value?.ToString() ?? ""'
+                                   @onblur="HandleDataChange"
+                                   class="form-control" />
+                        </td>
+                    }
+                    <td><button class="btn btn-danger btn-sm" @onclick="() => RemoveRow(row)">Remove</button></td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                @foreach (var column in Columns)
+                {
+                    <td>
+                        @if (column.DataType == ColumnDataType.Number)
+                        {
+                            <strong>Sum: @GetColumnSum(column.Name)</strong>
+                        }
+                    </td>
+                }
+                <td></td>
+            </tr>
+            <tr>
+                <td colspan="@(Columns.Count + 1)">
+                    <button class="btn btn-secondary" @onclick="AddRow">Add Row</button>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public Table Table { get; set; }
+
+    private List<ColumnDefinition> Columns { get; set; } = new List<ColumnDefinition>();
+    private List<Dictionary<string, object>> Rows { get; set; } = new List<Dictionary<string, object>>();
+
+    protected override void OnParametersSet()
+    {
+        if (Table != null)
+        {
+            Columns = JsonSerializer.Deserialize<List<ColumnDefinition>>(Table.ColumnsAsJson) ?? new List<ColumnDefinition>();
+            Rows = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(Table.DataAsJson) ?? new List<Dictionary<string, object>>();
+        }
+    }
+
+    private async Task AddRow()
+    {
+        var newRow = new Dictionary<string, object>();
+        foreach (var column in Columns)
+        {
+            newRow[column.Name] = GetDefaultValue(column.DataType);
+        }
+        Rows.Add(newRow);
+        await HandleDataChange();
+    }
+    
+    private async Task RemoveRow(Dictionary<string, object> row)
+    {
+        Rows.Remove(row);
+        await HandleDataChange();
+    }
+
+    private object GetDefaultValue(ColumnDataType dataType)
+    {
+        return dataType switch
+        {
+            ColumnDataType.Number => 0,
+            ColumnDataType.Boolean => false,
+            ColumnDataType.Date => DateTime.Today,
+            _ => ""
+        };
+    }
+
+    private decimal GetColumnSum(string columnName)
+    {
+        return Rows.Sum(row =>
+        {
+            if (row.TryGetValue(columnName, out var value) && decimal.TryParse(value?.ToString(), out var number))
+            {
+                return number;
+            }
+            return 0;
+        });
+    }
+
+    private async Task HandleDataChange()
+    {
+        Table.DataAsJson = JsonSerializer.Serialize(Rows);
+        await NoteDataService.UpdateTableAsync(Table);
+    }
+} 

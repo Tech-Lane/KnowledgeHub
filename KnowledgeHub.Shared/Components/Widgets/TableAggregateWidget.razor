@@ -1,0 +1,51 @@
+@using KnowledgeHub.Shared.Models
+@using KnowledgeHub.Shared.Services
+@using System.Text.Json
+@inject INoteDataService NoteDataService
+
+@if (table != null)
+{
+    <div class="widget-content">
+        <h5>Aggregate: @table.Name</h5>
+        <p><strong>@columnToSum?.Name Sum:</strong> @sum</p>
+    </div>
+}
+else
+{
+    <p>Loading data...</p>
+}
+
+@code {
+    [Parameter]
+    public Widget Widget { get; set; }
+
+    private Table table;
+    private decimal sum;
+    private ColumnDefinition columnToSum;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var settings = JsonSerializer.Deserialize<Dictionary<string, object>>(Widget.SettingsAsJson);
+        if (settings.TryGetValue("TableId", out var tableIdObj) && int.TryParse(tableIdObj.ToString(), out var tableId))
+        {
+            table = await NoteDataService.GetTableAsync(tableId);
+            if (table != null)
+            {
+                var columns = JsonSerializer.Deserialize<List<ColumnDefinition>>(table.ColumnsAsJson) ?? new();
+                columnToSum = columns.FirstOrDefault(c => c.DataType == ColumnDataType.Number);
+                if (columnToSum != null)
+                {
+                    var rows = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(table.DataAsJson) ?? new();
+                    sum = rows.Sum(row =>
+                    {
+                        if (row.TryGetValue(columnToSum.Name, out var value) && decimal.TryParse(value?.ToString(), out var number))
+                        {
+                            return number;
+                        }
+                        return 0;
+                    });
+                }
+            }
+        }
+    }
+} 
