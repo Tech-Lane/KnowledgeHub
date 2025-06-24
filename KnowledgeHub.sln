@@ -7,13 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowledgeHubV2", "Knowledge
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowledgeHubV2.Tests", "KnowledgeHubV2.Tests\KnowledgeHubV2.Tests.csproj", "{D53A0B74-AFA0-4483-BC5F-1BE50BF88BAA}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{77C9FBCB-529F-42FA-BB46-9E925AD0EFCB}"
-	ProjectSection(SolutionItems) = preProject
-		deploy.yml = deploy.yml
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,7 +45,7 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{77C9FBCB-529F-42FA-BB46-9E925AD0EFCB} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {19029709-BAE9-4871-8C92-5D3332FCE9D4}
 	EndGlobalSection
 EndGlobal
