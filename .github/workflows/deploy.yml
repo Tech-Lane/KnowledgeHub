@@ -1,0 +1,35 @@
+name: Deploy Blazor WASM to GitHub Pages
+
+# Run this workflow every time a change is pushed to the main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '8.0' # Based on your project files
+
+      - name: Restore dependencies
+        run: dotnet restore tech-lane/knowledgehub/KnowledgeHub-6925bad398a0382c77b46dc50d9c3ceb2bcf5a77/KnowledgeHubV2/KnowledgeHubV2.csproj
+
+      - name: Build
+        run: dotnet build tech-lane/knowledgehub/KnowledgeHub-6925bad398a0382c77b46dc50d9c3ceb2bcf5a77/KnowledgeHubV2/KnowledgeHubV2.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish tech-lane/knowledgehub/KnowledgeHub-6925bad398a0382c77b46dc50d9c3ceb2bcf5a77/KnowledgeHubV2/KnowledgeHubV2.csproj --configuration Release --no-build -o dist/wwwroot
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: dist/wwwroot # The folder the action should deploy.
