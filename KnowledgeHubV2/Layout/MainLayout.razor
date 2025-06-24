@@ -1,0 +1,72 @@
+﻿@using Radzen
+@using Radzen.Blazor
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject DatabaseStateService DbStateService
+@inject NavigationManager NavigationManager
+
+<div class="page">
+    @if (!DbStateService.IsDatabaseLoaded)
+    {
+        <main class="container">
+            <div class="text-center" style="margin-top: 20vh;">
+                <i class="fas fa-brain" style="font-size: 4rem; color: #6c757d;"></i>
+                <h1 class="mt-4">Personal Knowledge Hub</h1>
+                <p class="lead text-muted">Your personal space to organize everything.</p>
+                <div class="mt-5">
+                    <button class="btn btn-primary btn-lg mx-2" @onclick="CreateDatabase">
+                        <i class="fas fa-plus-circle"></i> Create New Database
+                    </button>
+                    <button class="btn btn-secondary btn-lg mx-2" @onclick="LoadDatabase">
+                        <i class="fas fa-folder-open"></i> Open Existing Database
+                    </button>
+                </div>
+            </div>
+        </main>
+    }
+    else
+    {
+        <div class="app-container">
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+            <div class="main-view">
+                <main class="main-content">
+                    @Body
+                </main>
+            </div>
+        </div>
+    }
+</div>
+
+<RadzenDialog />
+<RadzenNotification />
+<RadzenContextMenu />
+<RadzenTooltip />
+
+@code {
+    protected override void OnInitialized()
+    {
+        DbStateService.OnDatabaseReady += HandleDatabaseReady;
+    }
+
+    private async Task CreateDatabase()
+    {
+        await DbStateService.CreateNewDatabaseAsync();
+    }
+
+    private async Task LoadDatabase()
+    {
+        await DbStateService.LoadDatabaseAsync();
+    }
+    
+    private void HandleDatabaseReady()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        DbStateService.OnDatabaseReady -= HandleDatabaseReady;
+    }
+}

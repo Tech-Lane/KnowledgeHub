@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Document</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            line-height: 1.5;
+            color: #24292f;
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1, h2, h3 {
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: .3em;
+        }
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: rgba(175,184,193,0.2);
+            padding: .2em .4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 6px;
+        }
+        ul {
+            padding-left: 2em;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px 0;
+            border: 1px solid #d0d7de;
+        }
+    </style>
+</head>
+<body>
+    <h1>Design Document</h1>
+    <p>This document outlines the design of the KnowledgeHubV2 application, including its architecture and data model.</p>
+    <h2>1. Architectural Design</h2>
+    <p>The application follows a layered architecture designed for a client-side Blazor WebAssembly environment. It prioritizes in-memory performance while providing file-based persistence controlled by the user.</p>
+    <h3>Key Architectural Components:</h3>
+    <ul>
+        <li><strong>UI Layer (Blazor Components)</strong>: The user interface is built with Blazor components. These components are responsible for rendering the UI and capturing user interactions.</li>
+        <li><strong>State Management (<code>StateContainer</code>)</strong>: A central state container service is used to manage UI state, such as selections and drag-and-drop operations. It uses events to notify components of changes, decoupling them from one another.</li>
+        <li><strong>Service Layer</strong>: Contains the core business logic of the application.
+            <ul>
+                <li><code>NoteRepository</code>: Manages all CRUD (Create, Read, Update, Delete) operations for notes, folders, and tables.</li>
+                <li><code>ReferenceProcessingService</code>: Parses note content to find and replace dynamic data references (e.g., <code>{{Table.Column.sum}}</code>).</li>
+                <li><code>LocalBackupService</code>: Handles the import and export of user data to/from JSON files, with optional encryption.</li>
+            </ul>
+        </li>
+        <li><strong>Data Persistence Layer</strong>:
+            <ul>
+                <li><code>DatabaseStateService</code>: Manages the lifecycle of the application's data, which is stored in an in-memory SQLite database. It handles creating a new database, loading an existing <code>.db</code> file from the user's disk, and saving the in-memory database back to a file.</li>
+                <li><code>ApplicationDbContext</code>: An Entity Framework Core DbContext that defines the database schema and facilitates interaction with the in-memory database. It also automatically manages <code>CreatedAt</code> and <code>UpdatedAt</code> timestamps for all entities.</li>
+            </ul>
+        </li>
+        <li><strong>Browser Integration</strong>:
+            <ul>
+                <li><code>FileSystemService</code>: A service that abstracts JavaScript interop calls to the browser's File System Access API, allowing the application to read and write files on the user's local machine with their permission.</li>
+            </ul>
+        </li>
+    </ul>
+    <h3>Design Diagram</h3>
+    <p>The following diagram illustrates the flow of control and data between the major components of the application.</p>
+    <img src="Diagrams/design_diagram.svg" alt="Architectural Design Diagram">
+    <h2>2. Data Model (Class Diagram)</h2>
+    <p>The data model is defined using C# classes that are mapped to tables in the SQLite database by Entity Framework Core.</p>
+    <img src="Diagrams/class_diagram.svg" alt="Data Model Class Diagram">
+</body>
+</html> 

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance and Setup Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            line-height: 1.5;
+            color: #24292f;
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1, h2, h3 {
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: .3em;
+        }
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: rgba(175,184,193,0.2);
+            padding: .2em .4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 6px;
+        }
+        ul {
+            padding-left: 2em;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Maintenance and Setup Guide</h1>
+    <p>This guide provides instructions for developers to set up, build, and run the KnowledgeHubV2 application for maintenance and development purposes.</p>
+
+    <h2>1. System Requirements</h2>
+    <ul>
+        <li><strong>.NET SDK</strong>: The project is built using .NET 8. You will need the <a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 SDK</a> installed.</li>
+        <li><strong>A code editor</strong>: Visual Studio, VS Code, or another editor of your choice with C# support.</li>
+        <li><strong>A web browser</strong>: A modern web browser with support for WebAssembly (e.g., Chrome, Firefox, Edge, Safari).</li>
+    </ul>
+
+    <h2>2. Getting Started</h2>
+
+    <h3>2.1. Cloning the Repository</h3>
+    <p>First, clone the source code repository to your local machine.</p>
+    <pre><code>git clone &lt;repository-url&gt;
+cd KnowledgeHubV2</code></pre>
+
+    <h3>2.2. Restoring Dependencies</h3>
+    <p>Once you have the code, you need to restore the .NET dependencies defined in the <code>.csproj</code> file. Open a terminal in the project's root directory (<code>KnowledgeHubV2/</code>) and run:</p>
+    <pre><code>dotnet restore</code></pre>
+    <p>This command downloads and installs all the required NuGet packages.</p>
+
+    <h2>3. Building and Running the Application</h2>
+    <p>There are two primary ways to run the application for development.</p>
+
+    <h3>3.1. Standard Run</h3>
+    <p>To build and run the application, use the following command:</p>
+    <pre><code>dotnet run</code></pre>
+    <p>This will start a local development server. You can access the application by navigating to the URL displayed in the terminal (usually <code>https://localhost:xxxx</code> or <code>http://localhost:xxxx</code>).</p>
+
+    <h3>3.2. Watch Mode (Recommended for Development)</h3>
+    <p>For a more efficient development workflow, you can run the application in "watch" mode. This will automatically rebuild and reload the application in your browser whenever you make changes to the source code.</p>
+    <pre><code>dotnet watch run</code></pre>
+    <p>This is the recommended approach for active development as it provides a live-reloading experience.</p>
+
+    <h2>4. Project Structure Overview</h2>
+    <ul>
+        <li><code>/Data</code>: Contains the <code>ApplicationDbContext.cs</code> which defines the Entity Framework Core database context.</li>
+        <li><code>/Layout</code>: Contains the main layout components of the application, such as <code>MainLayout.razor</code> and <code>NavMenu.razor</code>.</li>
+        <li><code>/Models</code>: Contains the C# classes that represent the application's data model (e.g., <code>Note.cs</code>, <code>Folder.cs</code>).</li>
+        <li><code>/Pages</code>: Contains the routable Blazor components (the application's pages).</li>
+        <li><code>/Services</code>: Contains the C# classes that provide the application's business logic and functionality (e.g., <code>NoteRepository.cs</code>, <code>DatabaseStateService.cs</code>).</li>
+        <li><code>/wwwroot</code>: Contains static assets like CSS, JavaScript, and images. The <code>js</code> sub-folder contains JavaScript files used for browser interop.</li>
+        <li><code>Program.cs</code>: The entry point of the application, where services are configured and registered for dependency injection.</li>
+    </ul>
+
+    <h2>5. Database Information</h2>
+    <p>The application uses an in-memory SQLite database. The <code>DatabaseStateService</code> manages its lifecycle.</p>
+    <ul>
+        <li><strong>On startup</strong>, the user is prompted to either create a new database or open an existing <code>.db</code> file from their local disk.</li>
+        <li>All operations during the session are performed against this in-memory database for performance.</li>
+        <li>The user can save the current state of the in-memory database back to a <code>.db</code> file at any time.</li>
+    </ul>
+    <p>Because the database schema is created and managed by Entity Framework Core (<code>EnsureCreatedAsync</code>), there are no manual database migration steps required for a developer to run the application. The schema is applied automatically when a new database is created or loaded.</p>
+</body>
+</html> 

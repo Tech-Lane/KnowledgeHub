@@ -1,0 +1,92 @@
+@using KnowledgeHubV2.Models
+@using KnowledgeHubV2.Services
+
+<h3>Create a New Table</h3>
+
+<EditForm Model="@newTable" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="tableName" class="form-label">Table Name</label>
+        <InputText id="tableName" class="form-control" @bind-Value="newTable.Name" />
+        <ValidationMessage For="@(() => newTable.Name)" />
+    </div>
+
+    <hr />
+
+    <h5>Columns</h5>
+    @for (int i = 0; i < newTable.Columns.Count; i++)
+    {
+        var index = i; // capture loop variable
+        <div class="row mb-2">
+            <div class="col">
+                <InputText class="form-control" @bind-Value="newTable.Columns[index].Name" placeholder="Column Name" />
+            </div>
+            <div class="col">
+                <InputSelect @bind-Value="newTable.Columns[index].DataType" class="form-select">
+                    @foreach (var type in Enum.GetValues<ColumnDataType>())
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger btn-sm" @onclick="() => RemoveColumn(index)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    }
+
+    <button type="button" class="btn btn-secondary btn-sm" @onclick="AddColumn">
+        <i class="fas fa-plus"></i> Add Column
+    </button>
+
+    <div class="mt-4 d-flex justify-content-end">
+        <button type="button" class="btn btn-secondary me-2" @onclick="Cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Table</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EventCallback<NoteTable> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private NoteTable newTable = new();
+    private EditContext editContext = default!;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(newTable);
+        // Add a default column to start with
+        newTable.Columns.Add(new NoteTableColumn { Name = "Column1", DataType = ColumnDataType.Text });
+    }
+
+    private void AddColumn()
+    {
+        newTable.Columns.Add(new NoteTableColumn { Name = $"Column{newTable.Columns.Count + 1}", DataType = ColumnDataType.Text });
+    }
+
+    private void RemoveColumn(int index)
+    {
+        if (newTable.Columns.Count > 1) // Always leave at least one column
+        {
+            newTable.Columns.RemoveAt(index);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnSave.InvokeAsync(newTable);
+        newTable = new(); // Reset for next time
+        editContext = new EditContext(newTable);
+        newTable.Columns.Add(new NoteTableColumn { Name = "Column1", DataType = ColumnDataType.Text });
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

@@ -1,0 +1,327 @@
+@page "/note-editor/{NoteId:int}"
+@implements IAsyncDisposable
+@using Radzen
+@using Radzen.Blazor
+@inject NoteRepository NoteRepository
+@inject StateContainer StateContainer
+@inject NavigationManager NavigationManager
+@inject ReferenceProcessingService ReferenceProcessor
+@inject IJSRuntime JSRuntime
+
+@if (note != null)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <input class="form-control form-control-lg border-0 shadow-none p-0" @bind="note.Title" @oninput="OnTitleInput" />
+        <small class="text-muted">@saveStatus</small>
+    </div>
+    <RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="@(async (index) => await OnTabChange(index))">
+        <Tabs>
+            <RadzenTabsItem Text="Editor">
+                <RadzenHtmlEditor @key="note.NoteID" @bind-Value="note.Content" style="height: 500px;" Change="@OnContentChanged">
+                    <RadzenHtmlEditorUndo />
+                    <RadzenHtmlEditorRedo />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorBold />
+                    <RadzenHtmlEditorItalic />
+                    <RadzenHtmlEditorUnderline />
+                    <RadzenHtmlEditorStrikeThrough />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorFontName />
+                    <RadzenHtmlEditorFontSize />
+                    <RadzenHtmlEditorFormatBlock />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorColor />
+                    <RadzenHtmlEditorBackground />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorSubscript />
+                    <RadzenHtmlEditorSuperscript />
+                    <RadzenHtmlEditorRemoveFormat />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorSource />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorAlignLeft />
+                    <RadzenHtmlEditorAlignCenter />
+                    <RadzenHtmlEditorAlignRight />
+                    <RadzenHtmlEditorJustify />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorIndent />
+                    <RadzenHtmlEditorOutdent />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorUnorderedList />
+                    <RadzenHtmlEditorOrderedList />
+                    <RadzenHtmlEditorSeparator />
+                    <RadzenHtmlEditorLink />
+                    <RadzenHtmlEditorUnlink />
+                    <RadzenHtmlEditorImage />
+                </RadzenHtmlEditor>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Tables">
+                <div class="p-4">
+                    @foreach (var table in noteTables)
+                    {
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5>@table.Name</h5>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-primary mb-2" @onclick="() => OnAddNewRow(table)">
+                                    <i class="fas fa-plus"></i> Add new row
+                                </button>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            @foreach (var column in table.Columns)
+                                            {
+                                                <th>@column.Name</th>
+                                            }
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ var rows = table.Rows; }
+                                        @for (int i = 0; i < rows.Count; i++)
+                                        {
+                                            var row = rows[i];
+                                            var rowIndex = i;
+                                            <tr>
+                                                @foreach (var column in table.Columns)
+                                                {
+                                                    <td>
+                                                        @switch (column.DataType)
+                                                        {
+                                                            case ColumnDataType.Number:
+                                                                <input type="number" class="form-control" value="@GetNumberValue(row, column.Name)" @oninput="(e) => DebouncedSetValue(table, rowIndex, column.Name, e.Value ?? 0)" />
+                                                                break;
+                                                            case ColumnDataType.Date:
+                                                                <input type="date" class="form-control" value="@GetDateValue(row, column.Name)?.ToString("yyyy-MM-dd")" @oninput="(e) => DebouncedSetValue(table, rowIndex, column.Name, e.Value ?? DateTime.Now)" />
+                                                                break;
+                                                            case ColumnDataType.Boolean:
+                                                                <input type="checkbox" class="form-check-input" checked="@GetBooleanValue(row, column.Name)" @oninput="(e) => DebouncedSetValue(table, rowIndex, column.Name, e.Value ?? false)" />
+                                                                break;
+                                                            default:
+                                                                <input type="text" class="form-control" value="@GetStringValue(row, column.Name)" @oninput="(e) => DebouncedSetValue(table, rowIndex, column.Name, e.Value ?? string.Empty)" />
+                                                                break;
+                                                        }
+                                                    </td>
+                                                }
+                                                <td>
+                                                    <button class="btn btn-danger btn-sm" @onclick="() => OnDeleteRow(table, rowIndex)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    <button class="btn btn-primary mb-4 mt-4" @onclick="() => isCreateTableDialogVisible = true">
+                        <i class="fas fa-plus"></i> Create New Table
+                    </button>
+                </div>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Rendered View">
+                <div class="p-4 border rounded">
+                    @((MarkupString)renderedContent)
+                </div>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+
+    <div class="mt-3">
+        <button class="btn btn-secondary" @onclick="CloseEditor">Close</button>
+    </div>
+}
+else
+{
+    <p>Loading note...</p>
+}
+
+<Modal IsVisible="isCreateTableDialogVisible" Title="Create New Table" OnClose="() => isCreateTableDialogVisible = false">
+    <ChildContent>
+        <CreateTableDialog @ref="createTableDialog" OnSave="HandleCreateTable" OnCancel="() => isCreateTableDialogVisible = false" />
+    </ChildContent>
+</Modal>
+
+
+@code {
+    [Parameter]
+    public int NoteId { get; set; }
+
+    private Note? note;
+    private List<NoteTable> noteTables = new();
+    private string saveStatus = "All changes saved.";
+    private bool isCreateTableDialogVisible = false;
+    private System.Timers.Timer? debounceTimer;
+    private string renderedContent = "";
+    private int selectedTabIndex = 0;
+    private CreateTableDialog createTableDialog = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        debounceTimer = new System.Timers.Timer(500);
+        debounceTimer.Elapsed += async (s, e) => await HandleTimerElapsed();
+        debounceTimer.AutoReset = false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        debounceTimer?.Stop();
+        await SaveChanges();
+        debounceTimer?.Dispose();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var isSwitchingNote = note != null && NoteId != note.NoteID;
+
+        if (isSwitchingNote)
+        {
+            // Awaiting SaveChanges directly ensures data is persisted before loading the next note.
+            await SaveChanges();
+        }
+
+        if (note == null || isSwitchingNote)
+        {
+            await LoadNoteData();
+        }
+    }
+
+    private async Task LoadNoteData()
+    {
+        note = await NoteRepository.GetNoteByIdAsync(NoteId);
+        if (note != null)
+        {
+            noteTables = note.Tables.ToList();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        StateHasChanged();
+    }
+
+    private void OnTitleInput(ChangeEventArgs e)
+    {
+        if (note != null)
+        {
+            note.Title = e.Value?.ToString() ?? string.Empty;
+            TriggerSave();
+        }
+    }
+
+    private void OnContentChanged(string value)
+    {
+        if (note != null && note.Content != value)
+        {
+            note.Content = value;
+            TriggerSave();
+        }
+    }
+
+    private async Task OnTabChange(int index)
+    {
+        if (index == 2 && note != null) // Rendered View tab
+        {
+            TriggerSave();
+            await Task.Delay(600);
+            renderedContent = await ReferenceProcessor.ProcessContent(note.Content);
+            StateHasChanged();
+        }
+    }
+
+    private void OnAddNewRow(NoteTable table)
+    {
+        var newRow = new Dictionary<string, object>();
+        foreach (var col in table.Columns)
+        {
+            newRow[col.Name] = GetDefaultValue(col.DataType);
+        }
+
+        table.Rows = new List<Dictionary<string, object>>(table.Rows) { newRow };
+
+        TriggerSave();
+    }
+
+    private void OnDeleteRow(NoteTable table, int rowIndex)
+    {
+        var currentRows = table.Rows;
+        if (rowIndex >= 0 && rowIndex < currentRows.Count)
+        {
+            currentRows.RemoveAt(rowIndex);
+            table.Rows = currentRows;
+            TriggerSave();
+        }
+    }
+
+    private async Task HandleCreateTable(NoteTable newTable)
+    {
+        if (note != null)
+        {
+            var createdTable = await NoteRepository.CreateTableForNoteAsync(note.NoteID, newTable);
+            createdTable.Note = note;
+            noteTables.Add(createdTable);
+            isCreateTableDialogVisible = false;
+            StateHasChanged();
+        }
+    }
+
+    private void DebouncedSetValue(NoteTable table, int rowIndex, string key, object value)
+    {
+        var currentRows = table.Rows;
+        if (rowIndex >= 0 && rowIndex < currentRows.Count)
+        {
+            currentRows[rowIndex][key] = value;
+            table.Rows = currentRows;
+            TriggerSave();
+        }
+    }
+
+    private void TriggerSave()
+    {
+        saveStatus = "Saving...";
+        StateHasChanged();
+        debounceTimer?.Stop();
+        debounceTimer?.Start();
+    }
+
+    private async Task HandleTimerElapsed()
+    {
+        await SaveChanges();
+    }
+
+    private async Task SaveChanges()
+    {
+        if (note == null) return;
+
+        await NoteRepository.UpdateNoteAsync(note, noteTables);
+
+        await InvokeAsync(() =>
+        {
+            saveStatus = "All changes saved.";
+            StateHasChanged();
+        });
+        await StateContainer.NotifyStateChanged();
+    }
+
+    private void CloseEditor()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    // Helper methods for table cell binding
+    private string GetStringValue(Dictionary<string, object> row, string key) => row.ContainsKey(key) ? row[key]?.ToString() ?? "" : "";
+    private decimal GetNumberValue(Dictionary<string, object> row, string key) => decimal.TryParse(GetStringValue(row, key), out var result) ? result : 0;
+    private bool GetBooleanValue(Dictionary<string, object> row, string key) => bool.TryParse(GetStringValue(row, key), out var result) && result;
+    private DateTime? GetDateValue(Dictionary<string, object> row, string key) => DateTime.TryParse(GetStringValue(row, key), out var result) ? result : null;
+
+    private object GetDefaultValue(ColumnDataType type) => type switch
+    {
+        ColumnDataType.Number => 0,
+        ColumnDataType.Boolean => false,
+        ColumnDataType.Date => DateTime.Now,
+        _ => ""
+    };
+}

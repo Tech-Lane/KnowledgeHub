@@ -1,0 +1,105 @@
+@page "/admin"
+@using KnowledgeHubV2.Shared
+@using KnowledgeHubV2.Layout
+@inject LocalBackupService BackupService
+@inject IJSRuntime JSRuntime
+
+<h3>Admin Page</h3>
+
+<div class="mt-4">
+    <h4>Actions</h4>
+    <button class="btn btn-primary" @onclick="() => isReportVisible = true">View Notes Report</button>
+</div>
+
+<hr class="my-4" />
+
+<div class="card my-4">
+    <div class="card-header">
+        <h5>Export Data</h5>
+    </div>
+    <div class="card-body">
+        <p>Export all notes and folders to a local file. You can optionally encrypt the file with a password.</p>
+        <div class="input-group">
+            <input type="password" class="form-control" @bind="exportPassword" placeholder="Optional: Enter password for encryption" />
+            <button class="btn btn-success" @onclick="ExportData">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card my-4">
+    <div class="card-header">
+        <h5>Import Data</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Warning:</strong> Importing data will permanently delete all current notes and folders.
+        </p>
+        <div class="input-group">
+            <InputFile class="form-control" OnChange="OnImportFileSelected" />
+            <input type="password" class="form-control" @bind="importPassword" placeholder="Password (if file is encrypted)" />
+            <button class="btn btn-danger" @onclick="ImportData" disabled="@(importFile == null)">
+                <i class="fas fa-upload"></i> Import
+            </button>
+        </div>
+    </div>
+</div>
+
+<Modal IsVisible="isReportVisible" Title="Notes Report" OnClose="() => isReportVisible = false">
+    <ChildContent>
+        <div class="report-container">
+            <NotesReport />
+        </div>
+    </ChildContent>
+    <Footer>
+         <button class="btn btn-secondary" @onclick="() => isReportVisible = false">Close</button>
+    </Footer>
+</Modal>
+
+@code {
+    private bool isReportVisible = false;
+    private string? exportPassword;
+    private string? importPassword;
+    private IBrowserFile? importFile;
+
+    private async Task ExportData()
+    {
+        var (data, fileName) = await BackupService.ExportDataAsync(exportPassword);
+        using var stream = new MemoryStream(data);
+        using var streamRef = new DotNetStreamReference(stream);
+        await JSRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+    }
+
+    private void OnImportFileSelected(InputFileChangeEventArgs e)
+    {
+        importFile = e.File;
+    }
+
+    private async Task ImportData()
+    {
+        if (importFile == null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to import this file? This will overwrite all existing data.");
+        if (confirmed)
+        {
+            try
+            {
+                await using var stream = importFile.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10); // 10 MB limit
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                var fileBytes = ms.ToArray();
+
+                await BackupService.ImportDataAsync(fileBytes, importPassword);
+                await JSRuntime.InvokeVoidAsync("alert", "Import successful!");
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Import failed: {ex.Message}");
+            }
+        }
+    }
+}
+
+<p>This area is for administrative tasks, reporting, and application settings.</p> 

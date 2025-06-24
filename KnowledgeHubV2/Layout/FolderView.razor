@@ -1,0 +1,164 @@
+@using KnowledgeHubV2.Services
+@using KnowledgeHubV2.Models
+@using Radzen
+@using Radzen.Blazor
+@inject IJSRuntime JSRuntime
+@inject NoteRepository Repo
+@inject StateContainer State
+@inject ContextMenuService ContextMenuService
+@inject DialogService DialogService
+
+<div class="folder-view"
+     @onclick:stopPropagation
+     @ondragover:preventDefault="true"
+     @ondrop="() => State.HandleDrop(Folder.ParentFolderID)">
+    <div class="@GetFolderCssClass()"
+         @onclick="SelectFolder"
+         @oncontextmenu:preventDefault="true"
+         @oncontextmenu='(args) => OpenFolderContextMenu(args, Folder)'
+         draggable="true"
+         @ondragstart="() => State.StartDrag(Folder, null)"
+         @ondragenter="() => isDragOver = true"
+         @ondragleave="() => isDragOver = false"
+         @ondrop:stopPropagation="true"
+         @ondrop="HandleDropOnFolder">
+        <i class="fas @(isExpanded ? "fa-folder-open" : "fa-folder")"></i>
+        <span>@Folder.Name</span>
+    </div>
+
+    @if (isExpanded)
+    {
+        <div class="folder-content">
+            @foreach (var note in Folder.Notes)
+            {
+                <div class="@GetNoteCssClass(note)"
+                     @onclick="() => SelectNote(note.NoteID)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu='(args) => OpenNoteContextMenu(args, note)'
+                     draggable="true"
+                     @ondragstart="() => State.StartDrag(null, note)">
+                    <NavLink class="nav-link" href="@($"note-editor/{note.NoteID}")" Match="NavLinkMatch.All">
+                        <span class="nav-link-text" aria-hidden="true"><i class="fas fa-file-alt"></i> @note.Title</span>
+                    </NavLink>
+                </div>
+            }
+
+            @foreach (var subFolder in Folder.ChildFolders)
+            {
+                <FolderView Folder="subFolder" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Folder Folder { get; set; } = new();
+
+    private bool isExpanded = false;
+    private bool isDragOver = false;
+
+    private void SelectFolder()
+    {
+        isExpanded = !isExpanded;
+        State.SetSelection(SelectedItemType.Folder, Folder.FolderID);
+    }
+
+    private void SelectNote(int noteId)
+    {
+        State.SetSelection(SelectedItemType.Note, noteId);
+    }
+
+    private string GetFolderCssClass()
+    {
+        var css = "folder-header";
+        if (isExpanded) css += " expanded";
+        if (State.SelectedType == SelectedItemType.Folder && State.SelectedId == Folder.FolderID)
+        {
+            css += " selected";
+        }
+        if (isDragOver)
+        {
+            css += " drag-over";
+        }
+        return css;
+    }
+
+    private string GetNoteCssClass(Note note)
+    {
+        var css = "nav-item ps-3 pe-0";
+        if (State.SelectedType == SelectedItemType.Note && State.SelectedId == note.NoteID)
+        {
+            css += " selected";
+        }
+        return css;
+    }
+
+    private async Task HandleDropOnFolder()
+    {
+        isDragOver = false;
+        await State.HandleDrop(Folder.FolderID);
+    }
+
+    void OpenFolderContextMenu(MouseEventArgs args, Folder folder)
+    {
+        ContextMenuService.Open(args,
+           new List<ContextMenuItem> {
+               new ContextMenuItem() { Text = "Rename", Value = "rename", Icon = "edit" },
+               new ContextMenuItem() { Text = "Delete", Value = "delete", Icon = "delete" }
+           },
+           async (e) => await OnContextMenuItemClick(e, folder, null));
+    }
+
+    void OpenNoteContextMenu(MouseEventArgs args, Note note)
+    {
+        ContextMenuService.Open(args,
+            new List<ContextMenuItem> {
+                new ContextMenuItem() { Text = "Rename", Value = "rename", Icon = "edit" },
+                new ContextMenuItem() { Text = "Delete", Value = "delete", Icon = "delete" }
+            },
+            async (e) => await OnContextMenuItemClick(e, null, note));
+    }
+
+    async Task OnContextMenuItemClick(MenuItemEventArgs e, Folder? folder, Note? note)
+    {
+        if (e.Value as string == "delete")
+        {
+            if (folder != null)
+            {
+                if (await DialogService.Confirm($"Delete folder '{folder.Name}' and all its contents?", "Confirm Deletion", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" }) == true)
+                {
+                    await Repo.DeleteFolderAsync(folder.FolderID);
+                    await State.NotifyStateChanged();
+                }
+            }
+            else if (note != null)
+            {
+                if (await DialogService.Confirm($"Delete note '{note.Title}'?", "Confirm Deletion", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" }) == true)
+                {
+                    await Repo.DeleteNoteAsync(note.NoteID);
+                    await State.NotifyStateChanged();
+                }
+            }
+        }
+        else if (e.Value as string == "rename" && folder != null)
+        {
+            var newName = await JSRuntime.InvokeAsync<string>("showPrompt", "Enter new folder name:", folder.Name);
+            if (!string.IsNullOrEmpty(newName) && newName != folder.Name)
+            {
+                await Repo.RenameFolderAsync(folder.FolderID, newName);
+                await State.NotifyStateChanged();
+            }
+        }
+        else if (e.Value as string == "rename" && note != null)
+        {
+            var newName = await JSRuntime.InvokeAsync<string>("showPrompt", "Enter new note title:", note.Title);
+            if (!string.IsNullOrEmpty(newName) && newName != note.Title)
+            {
+                await Repo.RenameNoteAsync(note.NoteID, newName);
+                await State.NotifyStateChanged();
+            }
+        }
+        ContextMenuService.Close();
+    }
+} 

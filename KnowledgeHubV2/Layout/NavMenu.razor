@@ -1,0 +1,198 @@
+﻿@inject NoteRepository Repo
+@inject StateContainer StateContainer
+@inject ContextMenuService ContextMenuService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@using Radzen
+@implements IDisposable
+
+<div class="top-row ps-3 navbar navbar-dark" @onclick="ToggleNavMenu">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">KnowledgeHub</a>
+    </div>
+</div>
+
+<div @onclick="ClearSelection"
+     class="nav-scrollable @(isDragOverRoot ? "drag-over" : "")"
+     @ondragover:preventDefault="true"
+     @ondragenter="() => isDragOverRoot = true"
+     @ondragleave="() => isDragOverRoot = false"
+     @ondrop="HandleRootDrop">
+    <nav class="flex-column">
+        <div class="nav-item px-3 mb-2">
+            <div class="input-group">
+                <input type="search" class="form-control form-control-sm" placeholder="Search..." @bind="searchTerm" @onkeydown="HandleSearchKeyDown" />
+                <button class="btn btn-sm btn-outline-secondary" @onclick="ExecuteSearch"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+        <div class="nav-item px-3" @onclick:stopPropagation>
+            <div class="d-flex justify-content-start">
+                <button class="btn btn-sm btn-success me-2" @onclick="CreateFolder" @onclick:stopPropagation>
+                    <i class="fas fa-folder-plus"></i> New Folder
+                </button>
+                <button class="btn btn-sm btn-info" @onclick="CreateNote" @onclick:stopPropagation>
+                    <i class="fas fa-file-alt"></i> New Note
+                </button>
+            </div>
+        </div>
+
+        @if (_rootNotes != null)
+        {
+            foreach (var note in _rootNotes)
+            {
+                <div class="@GetNoteCssClass(note)"
+                     @onclick:stopPropagation
+                     @onclick="() => SelectNote(note.NoteID)"
+                     @oncontextmenu:preventDefault="true"
+                     @oncontextmenu='(args) => OpenNoteContextMenu(args, note)'
+                     draggable="true"
+                     @ondragstart="() => StateContainer.StartDrag(null, note)">
+                    <NavLink class="nav-link" href="@($"note-editor/{note.NoteID}")" Match="NavLinkMatch.All">
+                        <span class="nav-link-text" aria-hidden="true"><i class="fas fa-file-alt"></i> @note.Title</span>
+                    </NavLink>
+                </div>
+            }
+        }
+
+        @if (_rootFolders != null)
+        {
+            foreach (var folder in _rootFolders)
+            {
+                <FolderView Folder="folder" />
+            }
+        }
+    </nav>
+    <div class="nav-footer">
+        <NavLink class="nav-link" href="admin">
+            <i class="fas fa-cog"></i> Settings
+        </NavLink>
+    </div>
+</div>
+
+@code {
+    private List<Folder> _rootFolders = new();
+    private List<Note> _rootNotes = new();
+    private bool collapseNavMenu = true;
+    private bool isDragOverRoot = false;
+    private string searchTerm = string.Empty;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFoldersAndNotes();
+        StateContainer.OnChange += HandleStateChange;
+        await StateContainer.NotifyStateChanged();
+    }
+
+    private async void HandleStateChange()
+    {
+        await LoadFoldersAndNotes();
+        StateHasChanged();
+    }
+
+    private async Task LoadFoldersAndNotes()
+    {
+        _rootFolders = await Repo.GetRootFoldersAsync();
+        _rootNotes = await Repo.GetRootNotesAsync();
+        StateHasChanged();
+    }
+
+    private async Task CreateFolder()
+    {
+        var parentFolderId = StateContainer.SelectedType == SelectedItemType.Folder ? StateContainer.SelectedId : null;
+        await Repo.CreateFolderAsync("New Folder", parentFolderId);
+        await StateContainer.NotifyStateChanged();
+    }
+
+    private async Task CreateNote()
+    {
+        var parentFolderId = StateContainer.SelectedType == SelectedItemType.Folder ? StateContainer.SelectedId : null;
+        await Repo.CreateNoteAsync("New Note", parentFolderId);
+        await StateContainer.NotifyStateChanged();
+    }
+
+    private async Task ExecuteSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm)) return;
+
+        var results = await Repo.SearchAsync(searchTerm);
+        await DialogService.OpenAsync<SearchResultsDialog>("Search Results", 
+            new Dictionary<string, object> { { "Results", results } },
+            new DialogOptions { Width = "500px", Height = "auto", Resizable = true, Draggable = true });
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ExecuteSearch();
+        }
+    }
+
+    private void SelectNote(int noteId)
+    {
+        StateContainer.SetSelection(SelectedItemType.Note, noteId);
+    }
+
+    private string GetNoteCssClass(Note note)
+    {
+        var css = "nav-item px-3";
+        if (StateContainer.SelectedType == SelectedItemType.Note && StateContainer.SelectedId == note.NoteID)
+        {
+            css += " selected";
+        }
+        return css;
+    }
+
+    private void ClearSelection()
+    {
+        StateContainer.SetSelection(SelectedItemType.None, null);
+    }
+
+    private async Task HandleRootDrop()
+    {
+        isDragOverRoot = false;
+        await StateContainer.HandleDrop(null);
+    }
+
+    void OpenNoteContextMenu(MouseEventArgs args, Note note)
+    {
+        ContextMenuService.Open(args,
+            new List<ContextMenuItem> {
+                new ContextMenuItem() { Text = "Rename", Value = "rename", Icon = "edit" },
+                new ContextMenuItem() { Text = "Delete", Value = "delete", Icon = "delete" }
+            },
+            async (MenuItemEventArgs e) =>
+            {
+                if (e.Value as string == "delete")
+                {
+                    if (await DialogService.Confirm($"Delete note '{note.Title}'?", "Confirm Deletion", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" }) == true)
+                    {
+                        await Repo.DeleteNoteAsync(note.NoteID);
+                        await StateContainer.NotifyStateChanged();
+                    }
+                }
+                else if (e.Value as string == "rename")
+                {
+                    var newName = await JSRuntime.InvokeAsync<string>("showPrompt", "Enter new note title:", note.Title);
+                    if (!string.IsNullOrEmpty(newName) && newName != note.Title)
+                    {
+                        await Repo.RenameNoteAsync(note.NoteID, newName);
+                        await StateContainer.NotifyStateChanged();
+                    }
+                }
+                ContextMenuService.Close();
+            });
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    public void Dispose()
+    {
+        StateContainer.OnChange -= HandleStateChange;
+    }
+}

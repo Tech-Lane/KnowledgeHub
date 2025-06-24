@@ -1,0 +1,54 @@
+@using KnowledgeHubV2.Models
+@using KnowledgeHubV2.Services
+@using Radzen.Blazor
+@inject NoteRepository Repo
+@inject IJSRuntime JSRuntime
+
+<h3>All Notes Report</h3>
+
+<button class="btn btn-primary mb-3" @onclick="PrintReport">
+    <i class="fas fa-print"></i> Print Report
+</button>
+
+@if (notes == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenDataGrid @ref="grid" AllowSorting="true" Data="@notes" TItem="Note">
+        <Columns>
+            <RadzenDataGridColumn TItem="Note" Property="Title" Title="Title" />
+            <RadzenDataGridColumn TItem="Note" Property="Folder.Name" Title="Parent Folder">
+                <Template Context="note">
+                    @(note.Folder?.Name ?? "Root")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Note" Property="CreatedAt" Title="Created">
+                <Template Context="note">
+                    @note.CreatedAt.ToLocalTime().ToString("g")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Note" Property="UpdatedAt" Title="Last Modified">
+                <Template Context="note">
+                    @note.UpdatedAt.ToLocalTime().ToString("g")
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<Note>? notes;
+    private RadzenDataGrid<Note> grid = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        notes = await Repo.GetAllNotesWithFolderAsync();
+    }
+
+    private async Task PrintReport()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+} 

@@ -1,0 +1,45 @@
+@using KnowledgeHubV2.Models
+@using KnowledgeHubV2.Services
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+
+<div class="search-results">
+    @if (!Results.Any())
+    {
+        <p>No results found.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var item in Results)
+            {
+                <li class="list-group-item list-group-item-action" @onclick="() => NavigateToItem(item)">
+                    @if (item is Folder)
+                    {
+                        <i class="fas fa-folder me-2"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-file-alt me-2"></i>
+                    }
+                    @item.Name
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<IFileSystemItem> Results { get; set; } = new();
+
+    private void NavigateToItem(IFileSystemItem item)
+    {
+        if (item is Note note)
+        {
+            NavigationManager.NavigateTo($"/note-editor/{note.NoteID}");
+            DialogService.Close();
+        }
+    }
+} 

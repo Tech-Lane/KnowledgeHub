@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            line-height: 1.5;
+            color: #24292f;
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1, h2, h3 {
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: .3em;
+        }
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: rgba(175,184,193,0.2);
+            padding: .2em .4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 6px;
+        }
+        ul {
+            padding-left: 2em;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px 0;
+            border: 1px solid #d0d7de;
+        }
+        .warning {
+            padding: 1em;
+            background-color: #fff8c5;
+            border-left: 4px solid #f4bf4f;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Guide</h1>
+    <p>Welcome to KnowledgeHubV2! This guide will walk you through the main features of the application and how to use them.</p>
+
+    <h2>1. Getting Started: Your First Launch</h2>
+    <p>KnowledgeHubV2 is a file-based application that runs in your browser. All your data is stored locally on your computer.</p>
+    <p>When you first launch the application, you will be presented with two choices:</p>
+    <ul>
+        <li><strong>Create a New Database</strong>: Choose this option if you are a new user. It will create a new, empty knowledge base for you to start working with.</li>
+        <li><strong>Open an Existing Database</strong>: If you have previously used the application and saved your work, you can use this option to load your <code>.db</code> file and resume your session.</li>
+    </ul>
+    <img src="Screenshots/initial_load_page.JPG" alt="Initial Load Page">
+
+    <h2>2. The Main Interface</h2>
+    <p>The interface is divided into a few key areas:</p>
+    <ul>
+        <li><strong>File Explorer (Left Pane)</strong>: This area shows your hierarchy of folders and notes. You can click on folders to expand or collapse them, and click on notes to open them in the editor.</li>
+        <li><strong>Note Editor (Center Pane)</strong>: This is where the content of your selected note is displayed. You can edit and format your text here.</li>
+        <li><strong>Top Menu Bar</strong>: Contains main actions like saving your work, creating new items, and managing backups.</li>
+    </ul>
+    <img src="Screenshots/home_page.jpg" alt="Home Page">
+
+    <h2>3. Core Features</h2>
+
+    <h3>3.1. Creating Folders and Notes</h3>
+    <p>You can create new folders and notes to organize your information.</p>
+    <ul>
+        <li><strong>To create a root-level item</strong>: Use the "New Folder" or "New Note" buttons in the top menu.</li>
+        <li><strong>To create an item inside a folder</strong>: Right-click on a folder in the File Explorer and select the appropriate option from the context menu.</li>
+    </ul>
+
+    <h3>3.2. Editing and Formatting Notes</h3>
+    <p>Clicking on a note in the File Explorer opens it in the Note Editor. The editor provides standard rich-text formatting options, such as:</p>
+    <ul>
+        <li>Bold, Italic, Underline</li>
+        <li>Headings</li>
+        <li>Lists (bulleted and numbered)</li>
+        <li>Links</li>
+    </ul>
+    <img src="Screenshots/new_note_editor.jpg" alt="Note Editor">
+
+    <h3>3.3. Working with Tables</h3>
+    <p>You can embed structured data tables directly within your notes.</p>
+    <ol>
+        <li>In the Note Editor, use the "Create Table" button.</li>
+        <li>Define the columns for your table, giving each a name and a data type (Text, Number, Date, or Boolean).</li>
+        <li>Once the table is created, you can add, edit, and delete rows of data.</li>
+    </ol>
+    <img src="Screenshots/new_note_tables_create_new_table_dialog.jpg" alt="Create New Table Dialog">
+    <img src="Screenshots/new_note_tables.jpg" alt="Note with a table">
+    <img src="Screenshots/new_note_tables_create_new_row.jpg" alt="Adding a new row to a table">
+
+    <h3>3.4. Dynamic References</h3>
+    <p>One of the powerful features of KnowledgeHubV2 is the ability to display calculations from your tables directly in your notes. You can insert a reference into your note content using the following format:</p>
+    <p><code>{{TableName.ColumnName.Aggregate}}</code></p>
+    <ul>
+        <li><code>TableName</code>: The name of the table you want to reference.</li>
+        <li><code>ColumnName</code>: The name of the column you want to calculate from. This must be a 'Number' type column for most calculations.</li>
+        <li><code>Aggregate</code>: The calculation to perform. Can be <code>sum</code>, <code>avg</code> (average), or <code>count</code>.</li>
+    </ul>
+    <p><strong>Example</strong>: If you have a table named "Expenses" with a "Cost" column, you can display the total cost anywhere in your note by writing: <code>Total: {{Expenses.Cost.sum}}</code>. The application will automatically replace this with the calculated value.</p>
+    <img src="Screenshots/new_note_rendered_view.jpg" alt="Rendered view of a dynamic reference">
+
+    <h3>3.5. Organizing with Drag and Drop</h3>
+    <p>You can easily reorganize your knowledge base by dragging and dropping notes and folders in the File Explorer.</p>
+    <ul>
+        <li>Drag a note into a folder to move it.</li>
+        <li>Drag a folder into another folder to make it a sub-folder.</li>
+    </ul>
+    
+    <h3>3.6. Searching</h3>
+    <p>You can search for notes using the search bar in the top menu. The results will be displayed in a dialog.</p>
+    <img src="Screenshots/search_results.jpg" alt="Search Results">
+
+    <h2>4. Saving Your Work</h2>
+    <p>Your data is held in your browser's memory during your session. <strong>It is critical to save your work before closing the browser tab.</strong></p>
+    <ul>
+        <li><strong>Save</strong>: Click the "Save" button in the top menu to update the currently opened <code>.db</code> file with your latest changes.</li>
+        <li><strong>Save As</strong>: If you want to save a new copy of your database, you can use a "Save As" option (if available) to choose a new name and location for the file.</li>
+    </ul>
+
+    <h2>5. Backup and Restore (Import/Export)</h2>
+    <p>Separate from the main database file, you can export your data to a human-readable JSON format (<code>.khb</code> file), which is useful for backups or migrating data.</p>
+    <ul>
+        <li><strong>Export</strong>: Use the "Export" feature to generate a backup file. You can optionally protect this file with a password. Unencrypted files have a <code>.khb</code> extension, while encrypted files will be saved with a <code>.khb-enc</code> extension.</li>
+        <li><strong>Import</strong>: Use the "Import" feature to load data from a <code>.khb</code> or <code>.khb-enc</code> file. <span class="warning"><strong>Warning</strong>: Importing will completely overwrite all data in your currently open database.</span></li>
+    </ul>
+    <img src="Screenshots/admin_page.jpg" alt="Admin page for backup and restore">
+
+</body>
+</html> 

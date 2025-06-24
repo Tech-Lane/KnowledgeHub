@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Testing Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            line-height: 1.5;
+            color: #24292f;
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1, h2, h3 {
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: .3em;
+        }
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: rgba(175,184,193,0.2);
+            padding: .2em .4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 6px;
+        }
+        ul, ol {
+            padding-left: 2em;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px 0;
+            border: 1px solid #d0d7de;
+        }
+        hr {
+            height: .25em;
+            padding: 0;
+            margin: 24px 0;
+            background-color: #d0d7de;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Software Testing Documentation</h1>
+    <p>This document describes the testing strategy for the KnowledgeHubV2 application, provides examples of unit tests, and includes templates for documenting test results.</p>
+
+    <h2>1. Testing Approach</h2>
+    <p>To ensure software quality, a formal testing suite has been established.</p>
+    <p>An <strong>xUnit Test Project</strong> named <code>KnowledgeHubV2.Tests</code> has been added to the solution. This project contains unit tests for the application's services and models. Unit tests are ideal for testing individual components (classes and methods) in isolation to verify that they work as expected.</p>
+
+    <h3>Key Testing Strategies</h3>
+    <ul>
+        <li><strong>Mocking Dependencies</strong>: For services that depend on other services or external resources (like JavaScript interop), we use the <code>Moq</code> library to create mock objects. This allows us to test the service's logic in isolation. The tests for <code>FileSystemService</code> are a good example of this approach.</li>
+        <li><strong>In-Memory Database for Repository Tests</strong>: To test the <code>NoteRepository</code>, which interacts with the database, we use an in-memory SQLite database. A custom <code>DatabaseFixture</code> (see <code>TestHelpers/DatabaseFixture.cs</code>) sets up a clean, isolated database for each test class, ensuring that tests are repeatable and do not interfere with each other.</li>
+        <li><strong>State Logic Tests</strong>: For services that manage application state, like <code>StateContainer</code>, tests are written to verify that state is correctly set, retrieved, and that events are triggered as expected.</li>
+    </ul>
+
+    <h2>2. Running the Tests</h2>
+    <p>You can run the tests using the Visual Studio Test Explorer or from the command line. To run the tests from the terminal, navigate to the root directory of the solution and run:</p>
+    <pre><code>dotnet test</code></pre>
+    <img src="Screenshots/Tests.JPG" alt="Running tests in Visual Studio Test Explorer">
+
+    <h2>3. Unit Test Examples</h2>
+    <p>The <code>KnowledgeHubV2.Tests</code> project contains several examples of unit tests that demonstrate the strategies mentioned above.</p>
+
+    <h3>Example 1: Mocking with <code>FileSystemServiceTests</code></h3>
+    <p>The tests for the <code>FileSystemService</code> show how to mock <code>IJSRuntime</code> to test Blazor's JavaScript interop functionality without needing a running browser.</p>
+    <p><strong>File</strong>: <code>KnowledgeHubV2.Tests/Services/FileSystemServiceTests.cs</code></p>
+    <pre><code>// This is a snippet. See the file for the full implementation.
+[Fact]
+public async Task OpenFileAsync_ShouldReturnFileContent()
+{
+    // Arrange
+    var expectedContent = new byte[] { 1, 2, 3, 4, 5 };
+    _jsModuleMock
+        .Setup(x => x.InvokeAsync&lt;byte[]&gt;("openFile", It.IsAny&lt;object[]&gt;()))
+        .ReturnsAsync(expectedContent);
+
+    // Act
+    var result = await _fileSystemService.OpenFileAsync();
+
+    // Assert
+    Assert.Equal(expectedContent, result);
+}</code></pre>
+
+    <h3>Example 2: Database Testing with <code>NoteRepositoryTests</code></h3>
+    <p>The <code>NoteRepositoryTests</code> use a fixture to create a temporary database, populate it with test data, and then verify that the repository methods return the correct results.</p>
+    <p><strong>File</strong>: <code>KnowledgeHubV2.Tests/Services/NoteRepositoryTests.cs</code></p>
+    <pre><code>// This is a snippet. See the file for the full implementation.
+[Fact]
+public async Task GetAllDataAsync_ShouldReturnNotesAndFolders()
+{
+    // Arrange
+    _fixture.Context.Notes.AddRange(new List&lt;Note&gt; { new Note { Title = "Note 1" } });
+    _fixture.Context.Folders.AddRange(new List&lt;Folder&gt; { new Folder { Name = "Folder 1" } });
+    await _fixture.Context.SaveChangesAsync();
+
+    // Act
+    var (returnedNotes, returnedFolders) = await _fixture.NoteRepository.GetAllDataAsync();
+
+    // Assert
+    Assert.Single(returnedNotes);
+    Assert.Single(returnedFolders);
+}</code></pre>
+
+    <h2>4. Test Plan and Results (Template)</h2>
+    <p>This section provides templates for documenting a manual test plan and its results. You can copy and fill out these templates when performing formal testing cycles.</p>
+    <hr>
+    <h3>Test Plan Template</h3>
+    <ul>
+        <li><strong>Test ID</strong>: <code>[Unique ID, e.g., UT-SRV-01]</code></li>
+        <li><strong>Component Being Tested</strong>: <code>[e.g., FileSystemService]</code></li>
+        <li><strong>Functionality Being Tested</strong>: <code>[e.g., Saving a file]</code></li>
+        <li><strong>Test Description</strong>: <code>[Describe the test case]</code></li>
+        <li><strong>Prerequisites</strong>: <code>[List any setup required]</code></li>
+        <li><strong>Test Steps</strong>: <code>[List the steps to execute the test]</code></li>
+        <li><strong>Expected Result</strong>: <code>[What is the expected outcome?]</code></li>
+    </ul>
+    <hr>
+    <h3>Test Results Template</h3>
+    <ul>
+        <li><strong>Date of Test</strong>: <code>YYYY-MM-DD</code></li>
+        <li><strong>Tester</strong>: <code>Your Name</code></li>
+        <li><strong>Test ID</strong>: <code>[Test ID from the plan]</code></li>
+        <li><strong>Actual Result</strong>: <code>[Describe the actual outcome]</code></li>
+        <li><strong>Pass/Fail</strong>: <code>[Pass/Fail]</code></li>
+        <li><strong>Screenshots</strong>: <code>[Add screenshots if applicable]</code></li>
+        <li><strong>Summary of Changes</strong>: <code>[If the test failed, describe the fix implemented]</code></li>
+    </ul>
+    <hr>
+</body>
+</html> 
